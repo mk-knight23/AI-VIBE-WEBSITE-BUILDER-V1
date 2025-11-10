@@ -7,6 +7,14 @@ import { FRAGMENT_TITLE_PROMPT, PROMPT, RESPONSE_PROMPT } from "@/prompt";
 import { prisma } from "@/lib/db";
 import { SANDBOX_TIMEOUT } from "./types";
 
+// OpenRouter Configuration
+const OPENROUTER_BASE_URL = process.env.OPENAI_BASE_URL || "https://openrouter.ai/api/v1";
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+
+if (!OPENROUTER_API_KEY) {
+  throw new Error("OPENROUTER_API_KEY environment variable is required");
+}
+
 interface AgentState {
   summary: string;
   files: {[path: string]: string};
@@ -55,13 +63,15 @@ export const codeAgentFunction = inngest.createFunction(
 
     const codeAgent = createAgent<AgentState>({
       name: "code-agent",
-      description: "An expert coding agent",
+      description: "An expert coding agent using MiniMax M2 free model",
       system: PROMPT,
       model: openai({
-        model: "gpt-4.1",
+        model: "minimax/minimax-2.0",
         defaultParameters: {
           temperature: 0.1,
         },
+        baseUrl: OPENROUTER_BASE_URL,
+        apiKey: OPENROUTER_API_KEY,
       }),
       tools: [
         createTool({
@@ -180,19 +190,23 @@ export const codeAgentFunction = inngest.createFunction(
 
     const fragmentTitleGenerator = createAgent({
       name: "fragment-title-generator",
-      description: "A fragment title generator",
+      description: "A fragment title generator using Qwen free model",
       system: FRAGMENT_TITLE_PROMPT,
       model: openai({
-        model: "gpt-4o",
+        model: "qwen/qwen-2.5-coder-32b-instruct",
+        baseUrl: OPENROUTER_BASE_URL,
+        apiKey: OPENROUTER_API_KEY,
       }),
     })
 
     const responseGenerator = createAgent({
       name: "response-generator",
-      description: "A response generator",
+      description: "A response generator using DeepSeek free model",
       system: RESPONSE_PROMPT,
       model: openai({
-        model: "gpt-4o",
+        model: "deepseek/deepseek-coder",
+        baseUrl: OPENROUTER_BASE_URL,
+        apiKey: OPENROUTER_API_KEY,
       }),
     })
 

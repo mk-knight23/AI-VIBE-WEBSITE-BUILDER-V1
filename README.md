@@ -1,6 +1,26 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app)1
+# Vibe 1.2 - OpenRouter Integration
 
-Final Commit For Version 1
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+
+## Version 1.2 Updates
+
+**Migrated from OpenAI to OpenRouter API** 🎉
+
+### Key Changes:
+- **Free Models Integration**: Now uses free models from OpenRouter including:
+  - **MiniMax M2** (`minimax/minimax-2.0`) - For main code generation
+  - **Qwen 2.5 Coder** (`qwen/qwen-2.5-coder-32b-instruct`) - For fragment title generation  
+  - **DeepSeek Coder** (`deepseek/deepseek-coder`) - For response generation
+- **Cost Optimization**: Uses free tier models for all AI operations
+- **Environment Configuration**: Updated to use `OPENROUTER_API_KEY` instead of `OPENAI_API_KEY`
+- **API Endpoint**: Now uses OpenRouter's base URL (`https://openrouter.ai/api/v1`)
+
+### Environment Variables
+```env
+# OpenRouter Configuration (Free Models)
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+OPENAI_BASE_URL="https://openrouter.ai/api/v1"
+```
 
 ## Getting Started
 
@@ -29,7 +49,7 @@ To learn more about Next.js, take a look at the following resources:
 - [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
 - [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+You can check out [the Next.js GitHub repository](https://github.com/vercel/nextjs) - your feedback and contributions are welcome!
 
 ## Deploy on Vercel
 
