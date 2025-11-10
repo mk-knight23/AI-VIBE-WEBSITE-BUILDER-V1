@@ -8,11 +8,21 @@ import { prisma } from "@/lib/db";
 import { SANDBOX_TIMEOUT } from "./types";
 
 // OpenRouter Configuration
-const OPENROUTER_BASE_URL = process.env.OPENAI_BASE_URL || "https://openrouter.ai/api/v1";
+const OPENROUTER_BASE_URL = process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1";
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
 if (!OPENROUTER_API_KEY) {
   throw new Error("OPENROUTER_API_KEY environment variable is required");
+}
+
+// E2B (Code Interpreter) Configuration
+const E2B_API_KEY = process.env.E2B_API_KEY;
+const E2B_SANDBOX_TEMPLATE = process.env.E2B_SANDBOX_TEMPLATE || "vibe-kazi-test3";
+
+if (!E2B_API_KEY) {
+  throw new Error(
+    "E2B_API_KEY environment variable is required for sandbox execution. Get one from https://e2b.dev and set E2B_API_KEY."
+  );
 }
 
 interface AgentState {
@@ -25,9 +35,19 @@ export const codeAgentFunction = inngest.createFunction(
   { event: "code-agent/run" },
   async ({ event, step }) => {
     const sandboxId = await step.run("get-sandbox-id", async () => {
-      const sandbox = await Sandbox.create("vibe-kazi-test3");
-      await sandbox.setTimeout(SANDBOX_TIMEOUT); // 30 minutes timeout
-      return sandbox.sandboxId;
+      try {
+        const sandbox = await Sandbox.create(E2B_SANDBOX_TEMPLATE);
+        await sandbox.setTimeout(SANDBOX_TIMEOUT); // 30 minutes timeout
+        return sandbox.sandboxId;
+      } catch (err: any) {
+        const msg = err?.message || String(err);
+        if (msg.includes("401") || msg.toLowerCase().includes("unauthorized") || msg.toLowerCase().includes("user not found")) {
+          throw new Error(
+            `Failed to create E2B sandbox: ${msg}. This usually means your E2B_API_KEY is missing or invalid, or the template '${E2B_SANDBOX_TEMPLATE}' is not accessible in your E2B account.`
+          );
+        }
+        throw err;
+      }
     });
 
     const previousMessages = await step.run("get-previous-messages", async () => {
@@ -63,10 +83,10 @@ export const codeAgentFunction = inngest.createFunction(
 
     const codeAgent = createAgent<AgentState>({
       name: "code-agent",
-      description: "An expert coding agent using MiniMax M2 free model",
+      description: "An expert coding agent using the selected OpenRouter model",
       system: PROMPT,
       model: openai({
-        model: "minimax/minimax-2.0",
+        model: (event.data as any)?.model ?? "minimax/minimax-m2:free",
         defaultParameters: {
           temperature: 0.1,
         },
@@ -193,7 +213,7 @@ export const codeAgentFunction = inngest.createFunction(
       description: "A fragment title generator using Qwen free model",
       system: FRAGMENT_TITLE_PROMPT,
       model: openai({
-        model: "qwen/qwen-2.5-coder-32b-instruct",
+        model: "qwen/qwen3-coder:free",
         baseUrl: OPENROUTER_BASE_URL,
         apiKey: OPENROUTER_API_KEY,
       }),
@@ -204,7 +224,7 @@ export const codeAgentFunction = inngest.createFunction(
       description: "A response generator using DeepSeek free model",
       system: RESPONSE_PROMPT,
       model: openai({
-        model: "deepseek/deepseek-coder",
+        model: "deepseek/deepseek-chat-v3-0324:free",
         baseUrl: OPENROUTER_BASE_URL,
         apiKey: OPENROUTER_API_KEY,
       }),

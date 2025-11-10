@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { useTRPC } from "@/trpc/client";
 import { Button } from "@/components/ui/button";
 import { Form, FormField } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion } from "framer-motion";
 
 interface Props {
@@ -20,6 +21,13 @@ const formSchema = z.object({
     value: z.string()
         .min(1, { message: "Value is required." })
         .max(10000, { message: "Value is too long" }),
+    model: z.enum([
+        "minimax/minimax-m2:free",
+        "tngtech/deepseek-r1t2-chimera:free",
+        "z-ai/glm-4.5-air:free",
+        "deepseek/deepseek-chat-v3-0324:free",
+        "qwen/qwen3-coder:free",
+    ]),
 })
 
 export const MessageForm = ({ projectId }: Props) => {
@@ -30,6 +38,7 @@ export const MessageForm = ({ projectId }: Props) => {
         resolver: zodResolver(formSchema),
         defaultValues: {
             value: "",
+            model: "minimax/minimax-m2:free",
         },
     })
 
@@ -51,6 +60,7 @@ export const MessageForm = ({ projectId }: Props) => {
         await createMessage.mutateAsync({
             value: values.value,
             projectId,
+            model: values.model,
         })
     };
 
@@ -117,17 +127,30 @@ export const MessageForm = ({ projectId }: Props) => {
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.3 }}
                     >
-                        <motion.div 
-                            className="text-[10px] text-gray-500 dark:text-gray-400 font-mono"
-                            whileHover={{ scale: 1.05 }}
-                            transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                        >
-                            <kbd className="ml-auto pointer-events-none inline-flex h-5 select-none items-center
-                            gap-1 rounded border bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600 px-1.5 font-mono text-[10px] font-medium text-gray-600 dark:text-gray-300">
-                                <span>&#8984;</span>Enter
-                            </kbd>
-                            &nbsp;to submit
-                        </motion.div>
+                        <FormField
+                            control={form.control}
+                            name="model"
+                            render={({ field }) => (
+                                <motion.div
+                                    className="flex items-center gap-2"
+                                    whileHover={{ scale: 1.01 }}
+                                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                                >
+                                    <Select value={field.value} onValueChange={field.onChange} disabled={isPending}>
+                                        <SelectTrigger size="sm" className="w-[280px]">
+                                            <SelectValue placeholder="Select a model" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="minimax/minimax-m2:free">MiniMax M2 (free)</SelectItem>
+                                            <SelectItem value="tngtech/deepseek-r1t2-chimera:free">DeepSeek R1T2 Chimera (free)</SelectItem>
+                                            <SelectItem value="z-ai/glm-4.5-air:free">GLM 4.5 Air (free)</SelectItem>
+                                            <SelectItem value="deepseek/deepseek-chat-v3-0324:free">DeepSeek Chat v3 0324 (free)</SelectItem>
+                                            <SelectItem value="qwen/qwen3-coder:free">Qwen3 Coder (free)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </motion.div>
+                            )}
+                        />
                         <motion.div
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}

@@ -38,7 +38,13 @@ export const messagesRouter = createTRPCRouter({
             .max(10000, {message: "Value is too long"}),
           projectId: z.string()
             .min(1, {message: "Project ID is required."}),
-
+          model: z.enum([
+            "minimax/minimax-m2:free",
+            "tngtech/deepseek-r1t2-chimera:free",
+            "z-ai/glm-4.5-air:free",
+            "deepseek/deepseek-chat-v3-0324:free",
+            "qwen/qwen3-coder:free",
+          ]).optional(),
         })
       )
       .mutation(async ({input, ctx})=>{
@@ -67,6 +73,7 @@ export const messagesRouter = createTRPCRouter({
             data: {
                 value: input.value,
                 projectId: input.projectId,
+                model: input.model ?? "minimax/minimax-m2:free",
             }
         });
         return createdMessage;
