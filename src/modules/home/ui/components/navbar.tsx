@@ -10,6 +10,7 @@ import { SunIcon, MoonIcon, MonitorIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import UserControl from "@/components/user-control";
+import { SettingsDialog } from "@/components/settings-dialog";
 
 export const Navbar = () => {
     const [scrolled, setScrolled] = useState(false);
@@ -258,6 +259,16 @@ export const Navbar = () => {
 
                 {/* Interactive buttons section with mobile responsiveness */}
                 <div className="flex items-center gap-2 sm:gap-3">
+                    {/* Settings button */}
+                    <SignedIn>
+                        <motion.div
+                            whileHover={{ scale: 1.05, y: -2 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            <SettingsDialog />
+                        </motion.div>
+                    </SignedIn>
+
                     {/* Theme toggle button */}
                     <motion.div
                         whileHover={{ scale: 1.05, y: -2 }}

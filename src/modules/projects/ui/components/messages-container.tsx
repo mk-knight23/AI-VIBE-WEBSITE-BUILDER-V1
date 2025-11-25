@@ -1,4 +1,4 @@
-import { useTRPC } from "@/trpc/client";
+import { trpc } from "@/trpc/client";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { MessageCard } from "./message-card";
 import { MessageForm } from "./message-form";
@@ -18,12 +18,12 @@ export const MessagesContainer = ({
   activeFragment,
   setActiveFragment,
 }: Props) => {
+  const trpcProxy = trpc();
   const bottomRef = useRef<HTMLDivElement>(null);
   const lastAssistantMessageIdRef = useRef<string | null>(null);
-  const trpc = useTRPC();
 
   const { data: messages } = useSuspenseQuery(
-    trpc.messages.getMany.queryOptions(
+    trpcProxy.messages.getMany.queryOptions(
       {
         projectId: projectId,
       },

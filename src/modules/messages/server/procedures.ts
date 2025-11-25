@@ -4,6 +4,10 @@ import { protectedProcedure, createTRPCRouter } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 
+const MAX_MESSAGE_LENGTH = 10000;
+const RATE_LIMIT_WINDOW = 60000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 10;
+
 export const messagesRouter = createTRPCRouter({
     getMany: protectedProcedure
     .input(
@@ -35,16 +39,13 @@ export const messagesRouter = createTRPCRouter({
         z.object({
           value: z.string()
             .min(1, {message: "Value is required."})
-            .max(10000, {message: "Value is too long"}),
+            .max(MAX_MESSAGE_LENGTH, {message: "Value is too long"}),
           projectId: z.string()
             .min(1, {message: "Project ID is required."}),
-          model: z.enum([
-            "minimax/minimax-m2:free",
-            "tngtech/deepseek-r1t2-chimera:free",
-            "z-ai/glm-4.5-air:free",
-            "deepseek/deepseek-chat-v3-0324:free",
-            "qwen/qwen3-coder:free",
-          ]).optional(),
+          model: z.string().optional(),
+          provider: z.string().optional(),
+          apiKey: z.string().optional(),
+          baseUrl: z.string().url().optional(),
         })
       )
       .mutation(async ({input, ctx})=>{
@@ -73,7 +74,10 @@ export const messagesRouter = createTRPCRouter({
             data: {
                 value: input.value,
                 projectId: input.projectId,
-                model: input.model ?? "minimax/minimax-m2:free",
+                model: input.model,
+                provider: input.provider,
+                apiKey: input.apiKey,
+                baseUrl: input.baseUrl,
             }
         });
         return createdMessage;

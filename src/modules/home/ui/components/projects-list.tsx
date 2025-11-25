@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@/trpc/client";
+import { trpc } from "@/trpc/client";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,9 +12,9 @@ import { SparklesIcon, RocketIcon, HeartIcon } from "lucide-react";
 import { toast } from "sonner";
 
 export const ProjectsList = () => {
-    const trpc = useTRPC();
+    const trpcProxy = trpc();
     const { user } = useUser();
-    const { data: projects, isLoading, error } = useQuery(trpc.projects.getMany.queryOptions());
+    const { data: projects, isLoading, error } = useQuery(trpcProxy.projects.getMany.queryOptions());
     const [hoveredProject, setHoveredProject] = useState<string | null>(null);
     const [likedProjects, setLikedProjects] = useState<Set<string>>(new Set());
     const [mounted, setMounted] = useState(false);

@@ -7,11 +7,11 @@ import TextareaAutosize from "react-textarea-autosize";
 import { ArrowUpIcon, Loader2Icon } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
-import { useTRPC } from "@/trpc/client";
+import { trpc } from "@/trpc/client";
 import { Button } from "@/components/ui/button";
 import { Form, FormField } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion } from "framer-motion";
+import { useSettingsStore } from "@/lib/settings-store";
 
 interface Props {
     projectId: string;
@@ -21,32 +21,26 @@ const formSchema = z.object({
     value: z.string()
         .min(1, { message: "Value is required." })
         .max(10000, { message: "Value is too long" }),
-    model: z.enum([
-        "minimax/minimax-m2:free",
-        "tngtech/deepseek-r1t2-chimera:free",
-        "z-ai/glm-4.5-air:free",
-        "deepseek/deepseek-chat-v3-0324:free",
-        "qwen/qwen3-coder:free",
-    ]),
 })
 
 export const MessageForm = ({ projectId }: Props) => {
+    const trpcProxy = trpc();
+    const { provider, model, getActiveConfig } = useSettingsStore();
+    const activeConfig = getActiveConfig();
 
-    const trpc = useTRPC();
     const queryClient = useQueryClient();
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             value: "",
-            model: "minimax/minimax-m2:free",
         },
     })
 
-    const createMessage = useMutation(trpc.messages.create.mutationOptions({
+    const createMessage = useMutation(trpcProxy.messages.create.mutationOptions({
         onSuccess: () => {
             form.reset();
             queryClient.invalidateQueries(
-                trpc.messages.getMany.queryOptions({projectId}),
+                trpcProxy.messages.getMany.queryOptions({projectId}),
             );
             // TODO: Invalidate Usage Status
         },
@@ -60,7 +54,10 @@ export const MessageForm = ({ projectId }: Props) => {
         await createMessage.mutateAsync({
             value: values.value,
             projectId,
-            model: values.model,
+            model,
+            provider,
+            apiKey: activeConfig?.apiKey,
+            baseUrl: activeConfig?.baseUrl,
         })
     };
 
@@ -122,35 +119,11 @@ export const MessageForm = ({ projectId }: Props) => {
                             </motion.div>
                         )} />
                     <motion.div 
-                        className="flex gap-x-2 items-end justify-between pt-2"
+                        className="flex gap-x-2 items-end justify-end pt-2"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.3 }}
                     >
-                        <FormField
-                            control={form.control}
-                            name="model"
-                            render={({ field }) => (
-                                <motion.div
-                                    className="flex items-center gap-2"
-                                    whileHover={{ scale: 1.01 }}
-                                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                                >
-                                    <Select value={field.value} onValueChange={field.onChange} disabled={isPending}>
-                                        <SelectTrigger size="sm" className="w-[280px]">
-                                            <SelectValue placeholder="Select a model" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="minimax/minimax-m2:free">MiniMax M2 (free)</SelectItem>
-                                            <SelectItem value="tngtech/deepseek-r1t2-chimera:free">DeepSeek R1T2 Chimera (free)</SelectItem>
-                                            <SelectItem value="z-ai/glm-4.5-air:free">GLM 4.5 Air (free)</SelectItem>
-                                            <SelectItem value="deepseek/deepseek-chat-v3-0324:free">DeepSeek Chat v3 0324 (free)</SelectItem>
-                                            <SelectItem value="qwen/qwen3-coder:free">Qwen3 Coder (free)</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </motion.div>
-                            )}
-                        />
                         <motion.div
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}

@@ -6,23 +6,14 @@ import { getSandbox, lastAssistantTextMessageContent } from "./utils";
 import { FRAGMENT_TITLE_PROMPT, PROMPT, RESPONSE_PROMPT } from "@/prompt";
 import { prisma } from "@/lib/db";
 import { SANDBOX_TIMEOUT } from "./types";
+import { getProviderConfig, validateConfig } from "@/lib/api-config";
 
-// OpenRouter Configuration
-const OPENROUTER_BASE_URL = process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1";
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-
-if (!OPENROUTER_API_KEY) {
-  throw new Error("OPENROUTER_API_KEY environment variable is required");
-}
-
-// E2B (Code Interpreter) Configuration
+// E2B Configuration
 const E2B_API_KEY = process.env.E2B_API_KEY;
 const E2B_SANDBOX_TEMPLATE = process.env.E2B_SANDBOX_TEMPLATE || "vibe-kazi-test3";
 
 if (!E2B_API_KEY) {
-  throw new Error(
-    "E2B_API_KEY environment variable is required for sandbox execution. Get one from https://e2b.dev and set E2B_API_KEY."
-  );
+  throw new Error("E2B_API_KEY is required. Get one from https://e2b.dev");
 }
 
 interface AgentState {
@@ -81,17 +72,24 @@ export const codeAgentFunction = inngest.createFunction(
     }
   );
 
+    const provider = (event.data as any)?.provider;
+    const providerConfig = getProviderConfig(provider, event.data);
+
+    if (!validateConfig(providerConfig)) {
+      throw new Error(`Invalid provider configuration for: ${provider}`);
+    }
+
     const codeAgent = createAgent<AgentState>({
       name: "code-agent",
-      description: "An expert coding agent using the selected OpenRouter model",
+      description: "An expert coding agent using the selected model",
       system: PROMPT,
       model: openai({
-        model: (event.data as any)?.model ?? "minimax/minimax-m2:free",
+        model: (event.data as any)?.model ?? "x-ai/grok-4.1-fast:free",
         defaultParameters: {
           temperature: 0.1,
         },
-        baseUrl: OPENROUTER_BASE_URL,
-        apiKey: OPENROUTER_API_KEY,
+        baseUrl: providerConfig.baseUrl,
+        apiKey: providerConfig.apiKey,
       }),
       tools: [
         createTool({
@@ -210,23 +208,23 @@ export const codeAgentFunction = inngest.createFunction(
 
     const fragmentTitleGenerator = createAgent({
       name: "fragment-title-generator",
-      description: "A fragment title generator using Qwen free model",
+      description: "A fragment title generator",
       system: FRAGMENT_TITLE_PROMPT,
       model: openai({
-        model: "qwen/qwen3-coder:free",
-        baseUrl: OPENROUTER_BASE_URL,
-        apiKey: OPENROUTER_API_KEY,
+        model: provider === "megallm" ? "alibaba-qwen3-32b" : provider === "agentrouter" ? "glm-4.5" : provider === "routeway" ? "glm-4.6:free" : "qwen/qwen3-coder:free",
+        baseUrl: providerConfig.baseUrl,
+        apiKey: providerConfig.apiKey,
       }),
     })
 
     const responseGenerator = createAgent({
       name: "response-generator",
-      description: "A response generator using DeepSeek free model",
+      description: "A response generator",
       system: RESPONSE_PROMPT,
       model: openai({
-        model: "deepseek/deepseek-chat-v3-0324:free",
-        baseUrl: OPENROUTER_BASE_URL,
-        apiKey: OPENROUTER_API_KEY,
+        model: provider === "megallm" ? "deepseek-ai/deepseek-v3.1" : provider === "agentrouter" ? "deepseek-v3.1" : provider === "routeway" ? "deepseek-v3-0324:free" : "deepseek/deepseek-chat-v3-0324:free",
+        baseUrl: providerConfig.baseUrl,
+        apiKey: providerConfig.apiKey,
       }),
     })
 

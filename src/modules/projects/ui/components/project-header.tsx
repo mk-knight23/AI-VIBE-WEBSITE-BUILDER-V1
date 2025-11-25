@@ -10,7 +10,7 @@ import {
     SunMoonIcon
 } from 'lucide-react';
 
-import { useTRPC } from "@/trpc/client";
+import { trpc } from "@/trpc/client";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -31,9 +31,9 @@ interface Props {
 }
 
 export const ProjectHeader = ({projectId}:Props) => {
-    const trpc = useTRPC();
+    const trpcProxy = trpc();
     const {data: project} = useSuspenseQuery(
-        trpc.projects.getOne.queryOptions({id: projectId})
+        trpcProxy.projects.getOne.queryOptions({id: projectId})
     );
 
     const {setTheme, theme} = useTheme()

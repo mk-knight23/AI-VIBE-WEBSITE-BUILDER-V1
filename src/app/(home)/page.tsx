@@ -1,6 +1,6 @@
 "use client";
 
-import { ProjectForm } from "@/modules/home/ui/components/project-form";
+import { ProjectFormEnhanced } from "@/modules/home/ui/components/project-form-enhanced";
 import { ProjectsList } from "@/modules/home/ui/components/projects-list";
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -298,7 +298,7 @@ const Page = () => {
             transition={{ delay: 1.2, duration: 0.4 }}
           >
             <div className="relative z-10">
-              <ProjectForm />
+              <ProjectFormEnhanced />
             </div>
           </motion.div>
         </motion.div>

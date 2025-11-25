@@ -4,7 +4,6 @@ import { codeAgentFunction } from "@/inngest/functions";
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
-  functions: [
-    codeAgentFunction,
-  ],
+  functions: [codeAgentFunction],
+  streaming: "allow",
 });

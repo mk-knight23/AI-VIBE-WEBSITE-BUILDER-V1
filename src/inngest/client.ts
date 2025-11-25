@@ -1,6 +1,6 @@
-import { Inngest } from "inngest"
+import { Inngest } from "inngest";
 
-// Initialize the Inngest client with the correct configuration
 export const inngest = new Inngest({
-  id: "vibe-development"
-})
+  id: "vibe-development",
+  eventKey: process.env.INNGEST_EVENT_KEY,
+});
