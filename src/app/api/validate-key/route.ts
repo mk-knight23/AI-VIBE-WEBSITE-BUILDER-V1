@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 const VALIDATION_MODELS: Record<string, string> = {
   openrouter: "x-ai/grok-4.1-fast:free",
   routeway: "kimi-k2-0905:free",

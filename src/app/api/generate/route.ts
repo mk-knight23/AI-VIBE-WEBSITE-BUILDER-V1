@@ -6,6 +6,8 @@ import { prisma } from "@/lib/db";
 const E2B_API_KEY = process.env.E2B_API_KEY;
 const E2B_TEMPLATE = process.env.E2B_SANDBOX_TEMPLATE || "vibe-kazi-test3";
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
 const SYSTEM_PROMPT = `You are an expert web developer. Create a complete, production-ready website based on the user's request.
