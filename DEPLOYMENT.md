@@ -1,99 +1,128 @@
-# Deployment Guide - Vibe AI Website Builder
+# Deployment Guide - Vibe v3.0.0
+
+Complete guide for deploying Vibe to production.
 
 ## 🚀 Quick Deploy to Vercel
 
 ### Prerequisites
-1. GitHub account
-2. Vercel account (sign up at https://vercel.com)
-3. Neon database account (sign up at https://neon.tech)
-4. Clerk account (sign up at https://clerk.com)
-5. E2B account (sign up at https://e2b.dev)
+- GitHub account
+- Vercel account (free tier works)
+- PostgreSQL database (Neon recommended)
+- Clerk account (free tier)
+- E2B account
+- At least one AI provider API key
 
----
-
-## Step 1: Setup Neon Database
-
-1. **Create Neon Database**
-   - Go to https://neon.tech
-   - Create a new project
-   - Copy the connection string
-
-2. **Connection String Format**
-   ```
-   postgresql://user:password@host.neon.tech/dbname?sslmode=require
-   ```
-
----
-
-## Step 2: Push to GitHub
+### Step 1: Prepare Repository
 
 ```bash
-# Initialize git (if not already done)
-cd /Users/mkazi/Downloads/vibe-main
-git init
-
-# Add all files
+# Ensure all changes are committed
 git add .
-
-# Commit changes
-git commit -m "Initial commit - Vibe AI Website Builder v1.4"
-
-# Create repository on GitHub (via web interface)
-# Then add remote and push
-git remote add origin https://github.com/YOUR_USERNAME/vibe-website-builder.git
-git branch -M main
-git push -u origin main
+git commit -m "Upgrade to v3.0.0"
+git push origin main
 ```
 
----
+### Step 2: Setup External Services
 
-## Step 3: Deploy to Vercel
+#### A. Database (Neon PostgreSQL)
 
-### Option A: Via Vercel Dashboard (Recommended)
+1. Go to [Neon](https://neon.tech)
+2. Create new project
+3. Copy connection string
+4. Format: `postgresql://user:password@host.neon.tech/dbname?sslmode=require`
 
-1. **Import Project**
-   - Go to https://vercel.com/new
-   - Click "Import Git Repository"
-   - Select your GitHub repository
-   - Click "Import"
+#### B. Authentication (Clerk)
 
-2. **Configure Environment Variables**
-   Add these in Vercel dashboard:
+1. Go to [Clerk](https://clerk.com)
+2. Create new application
+3. Copy API keys:
+   - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+   - `CLERK_SECRET_KEY`
+4. Configure redirect URLs:
+   - Sign in: `/sign-in`
+   - Sign up: `/sign-up`
+   - After sign in: `/`
+   - After sign up: `/`
 
-   ```env
-   # Database
-   DATABASE_URL=postgresql://user:password@host.neon.tech/dbname?sslmode=require
+#### C. Sandbox (E2B)
 
-   # Clerk
-   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_...
-   CLERK_SECRET_KEY=sk_live_...
-   NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
-   NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
-   NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/
-   NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/
+1. Go to [E2B](https://e2b.dev)
+2. Create account
+3. Get API key: `E2B_API_KEY`
 
-   # E2B
-   E2B_API_KEY=e2b_...
-   E2B_SANDBOX_TEMPLATE=vibe-template
+#### D. AI Provider (Choose One or More)
 
-   # Inngest
-   INNGEST_EVENT_KEY=your_production_key
+**OpenRouter (Recommended - Free Models)**
+1. Go to [OpenRouter](https://openrouter.ai)
+2. Create account
+3. Get API key: `OPENROUTER_API_KEY`
+4. Free models: Grok, DeepSeek, Qwen, Gemini
 
-   # App URL (will be provided by Vercel)
-   NEXT_PUBLIC_APP_URL=https://your-app.vercel.app
-   ```
+**Routeway (Free Models)**
+1. Go to [Routeway](https://routeway.ai)
+2. Get API key: `ROUTEWAY_API_KEY`
+3. Free models: Kimi, GLM, DeepSeek, Llama
 
-3. **Deploy**
-   - Click "Deploy"
-   - Wait for build to complete
+**MegaLLM (Paid)**
+1. Go to [MegaLLM](https://megallm.io)
+2. Get API key: `MEGALLM_API_KEY`
+3. Cost: ~$0.07/M tokens
 
-### Option B: Via Vercel CLI
+**AgentRouter (Intelligent Routing)**
+1. Go to [AgentRouter](https://agentrouter.org)
+2. Get API key: `AGENTROUTER_API_KEY`
+
+### Step 3: Deploy to Vercel
+
+#### Option A: Vercel Dashboard
+
+1. Go to [Vercel](https://vercel.com)
+2. Click "Add New Project"
+3. Import your GitHub repository
+4. Configure project:
+   - Framework Preset: Next.js
+   - Root Directory: `./`
+   - Build Command: `npm run build`
+   - Output Directory: `.next`
+
+5. Add Environment Variables:
+
+```env
+# Database
+DATABASE_URL=postgresql://user:password@host.neon.tech/dbname?sslmode=require
+
+# Clerk Authentication
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_...
+CLERK_SECRET_KEY=sk_live_...
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/
+NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/
+
+# E2B Sandbox
+E2B_API_KEY=e2b_...
+
+# App URL (will be provided by Vercel)
+NEXT_PUBLIC_APP_URL=https://your-app.vercel.app
+
+# AI Provider (at least one)
+OPENROUTER_API_KEY=sk-or-v1-...
+# ROUTEWAY_API_KEY=sk-...
+# MEGALLM_API_KEY=sk-mega-...
+# AGENTROUTER_API_KEY=sk-...
+
+# Default Provider
+DEFAULT_PROVIDER=openrouter
+```
+
+6. Click "Deploy"
+
+#### Option B: Vercel CLI
 
 ```bash
 # Install Vercel CLI
 npm i -g vercel
 
-# Login to Vercel
+# Login
 vercel login
 
 # Deploy
@@ -102,183 +131,254 @@ vercel
 # Follow prompts and add environment variables
 ```
 
----
+### Step 4: Post-Deployment Setup
 
-## Step 4: Run Database Migrations
-
-After deployment, run migrations:
+#### A. Run Database Migrations
 
 ```bash
 # Using Vercel CLI
-vercel env pull .env.production
+vercel env pull .env.local
 npx prisma migrate deploy
 
-# Or via Vercel dashboard
-# Go to your project → Settings → Environment Variables
-# Add DATABASE_URL
-# Then redeploy
+# Or connect to production database directly
+DATABASE_URL="your-production-url" npx prisma migrate deploy
 ```
 
----
+#### B. Update Clerk URLs
 
-## Step 5: Configure Clerk for Production
+1. Go to Clerk Dashboard
+2. Navigate to "Paths"
+3. Update with your Vercel URL:
+   - Home URL: `https://your-app.vercel.app`
+   - Sign in URL: `https://your-app.vercel.app/sign-in`
+   - Sign up URL: `https://your-app.vercel.app/sign-up`
 
-1. **Update Clerk Settings**
-   - Go to Clerk dashboard
-   - Add your Vercel domain to allowed domains
-   - Update redirect URLs
+#### C. Update NEXT_PUBLIC_APP_URL
 
-2. **Webhook Setup (Optional)**
-   - Add webhook URL: `https://your-app.vercel.app/api/webhooks/clerk`
+1. Go to Vercel Dashboard
+2. Project Settings → Environment Variables
+3. Update `NEXT_PUBLIC_APP_URL` with your deployment URL
+4. Redeploy
 
----
+### Step 5: Verify Deployment
 
-## Step 6: Configure Inngest for Production
-
-1. **Create Inngest Account**
-   - Go to https://inngest.com
-   - Create new app
-
-2. **Add Webhook**
-   - URL: `https://your-app.vercel.app/api/inngest`
-   - Copy event key
-   - Add to Vercel environment variables
-
----
-
-## Environment Variables Checklist
-
-### Required
-- [ ] DATABASE_URL (Neon)
-- [ ] NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-- [ ] CLERK_SECRET_KEY
-- [ ] E2B_API_KEY
-- [ ] INNGEST_EVENT_KEY
-- [ ] NEXT_PUBLIC_APP_URL
-
-### Optional (Users can add in UI)
-- [ ] OPENROUTER_API_KEY
-- [ ] MEGALLM_API_KEY
-- [ ] AGENTROUTER_API_KEY
-- [ ] ROUTEWAY_API_KEY
-
----
-
-## Post-Deployment
-
-1. **Test the Application**
-   - Visit your Vercel URL
+1. **Test Authentication**
+   - Visit your app
    - Sign up/Sign in
-   - Configure API keys in settings
-   - Create a test project
+   - Verify redirect works
 
-2. **Monitor**
-   - Check Vercel logs
-   - Monitor Neon database
-   - Check Inngest dashboard
+2. **Test Generation**
+   - Create new project
+   - Enter prompt
+   - Verify streaming works
+   - Check preview loads
 
-3. **Custom Domain (Optional)**
-   - Go to Vercel dashboard
-   - Add custom domain
-   - Update DNS records
+3. **Test Settings**
+   - Open settings dialog
+   - Add API key
+   - Validate key
+   - Test generation
 
----
+## 🔧 Advanced Configuration
 
-## Troubleshooting
+### Custom Domain
+
+1. Go to Vercel Dashboard
+2. Project Settings → Domains
+3. Add your domain
+4. Update DNS records
+5. Update `NEXT_PUBLIC_APP_URL`
+6. Update Clerk URLs
+
+### Environment-Specific Variables
+
+```bash
+# Development
+vercel env add VARIABLE_NAME development
+
+# Preview
+vercel env add VARIABLE_NAME preview
+
+# Production
+vercel env add VARIABLE_NAME production
+```
+
+### Database Connection Pooling
+
+For production, use connection pooling:
+
+```env
+# Neon with pooling
+DATABASE_URL=postgresql://user:password@host-pooler.neon.tech/dbname?sslmode=require&pgbouncer=true
+```
+
+### Edge Runtime Configuration
+
+Already configured in `next.config.ts`:
+
+```typescript
+export default {
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
+  },
+}
+```
+
+## 🔒 Security Checklist
+
+- [ ] All API keys are in environment variables
+- [ ] No secrets in code
+- [ ] HTTPS enabled (automatic with Vercel)
+- [ ] Clerk authentication configured
+- [ ] Rate limiting enabled
+- [ ] CORS configured properly
+- [ ] Database uses SSL
+- [ ] Environment variables are production values
+
+## 📊 Monitoring
+
+### Vercel Analytics
+
+1. Go to Vercel Dashboard
+2. Enable Analytics
+3. View real-time metrics
+
+### Error Tracking
+
+Built-in error boundaries catch and log errors.
+
+### Performance Monitoring
+
+- Use Vercel Speed Insights
+- Monitor Core Web Vitals
+- Check function execution times
+
+## 🐛 Troubleshooting
 
 ### Build Fails
+
 ```bash
 # Check build logs in Vercel
 # Common issues:
-# 1. Missing environment variables
-# 2. Database connection issues
-# 3. Prisma generation errors
+- Missing environment variables
+- TypeScript errors
+- Dependency issues
 
-# Solution: Ensure all env vars are set
+# Fix:
+vercel logs
+npm run build # Test locally
 ```
 
 ### Database Connection Issues
+
 ```bash
-# Verify DATABASE_URL format
-# Ensure ?sslmode=require is included
-# Check Neon database is active
+# Verify connection string
+# Check SSL mode
+# Verify IP allowlist (Neon)
+
+# Test connection:
+npx prisma db push
 ```
 
-### Clerk Authentication Issues
+### Authentication Issues
+
 ```bash
-# Verify domain is added in Clerk dashboard
-# Check redirect URLs are correct
-# Ensure API keys are production keys
+# Verify Clerk keys
+# Check redirect URLs
+# Verify domain configuration
+
+# Test locally:
+npm run dev
 ```
 
----
-
-## Git Commands Reference
+### Generation Not Working
 
 ```bash
-# Check status
-git status
-
-# Add changes
-git add .
-
-# Commit
-git commit -m "Your message"
-
-# Push to GitHub
-git push origin main
-
-# Pull latest
-git pull origin main
-
-# Create new branch
-git checkout -b feature-name
-
-# Merge branch
-git checkout main
-git merge feature-name
+# Check AI provider API key
+# Verify E2B API key
+# Check rate limits
+# Review function logs
 ```
 
----
+## 🔄 Updates and Maintenance
 
-## Vercel CLI Commands
+### Update Dependencies
 
 ```bash
+npm update
+npm audit fix
+git commit -am "Update dependencies"
+git push
+```
+
+### Database Migrations
+
+```bash
+# Create migration
+npx prisma migrate dev --name migration_name
+
 # Deploy to production
-vercel --prod
-
-# View logs
-vercel logs
-
-# List deployments
-vercel ls
-
-# Remove deployment
-vercel rm deployment-url
-
-# Pull environment variables
-vercel env pull
+DATABASE_URL="production-url" npx prisma migrate deploy
 ```
 
+### Rollback Deployment
+
+```bash
+# Via Vercel Dashboard
+# Deployments → Previous deployment → Promote to Production
+
+# Via CLI
+vercel rollback
+```
+
+## 📈 Scaling
+
+### Vercel Pro Features
+
+- Increased function execution time
+- More bandwidth
+- Team collaboration
+- Advanced analytics
+
+### Database Scaling
+
+- Neon autoscaling
+- Connection pooling
+- Read replicas
+- Backup strategies
+
+### CDN and Caching
+
+- Automatic with Vercel
+- Edge caching
+- Static asset optimization
+
+## 💰 Cost Estimation
+
+### Free Tier (Hobby)
+- Vercel: Free
+- Neon: Free (0.5GB storage)
+- Clerk: Free (10k MAU)
+- E2B: Free tier available
+- OpenRouter: Free models available
+
+### Production (Pro)
+- Vercel Pro: $20/month
+- Neon Pro: $19/month
+- Clerk Pro: $25/month
+- E2B: Pay as you go
+- AI Providers: Varies
+
+## 🆘 Support
+
+- **Issues**: GitHub Issues
+- **Docs**: README.md
+- **Community**: GitHub Discussions
+
 ---
 
-## Security Notes
-
-- ✅ Never commit .env file
-- ✅ Use production API keys in Vercel
-- ✅ Enable SSL/HTTPS (automatic on Vercel)
-- ✅ Rotate keys regularly
-- ✅ Monitor usage and logs
-
----
-
-## Support
-
-- Vercel Docs: https://vercel.com/docs
-- Neon Docs: https://neon.tech/docs
-- Clerk Docs: https://clerk.com/docs
-- E2B Docs: https://e2b.dev/docs
-
----
-
-**Ready to deploy! 🚀**
+**Version**: 3.0.0  
+**Last Updated**: 2025-11-26  
+**Status**: Production Ready ✅

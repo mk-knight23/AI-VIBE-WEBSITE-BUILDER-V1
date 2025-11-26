@@ -1,4 +1,3 @@
-import { inngest } from "@/inngest/client";
 import { prisma } from "@/lib/db";
 import { protectedProcedure, createTRPCRouter } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
@@ -69,17 +68,7 @@ export const messagesRouter = createTRPCRouter({
             }
         })
 
-        await inngest.send({
-            name: "code-agent/run",
-            data: {
-                value: input.value,
-                projectId: input.projectId,
-                model: input.model,
-                provider: input.provider,
-                apiKey: input.apiKey,
-                baseUrl: input.baseUrl,
-            }
-        });
+        // Message created - generation will be triggered via streaming API from frontend
         return createdMessage;
       })
 })

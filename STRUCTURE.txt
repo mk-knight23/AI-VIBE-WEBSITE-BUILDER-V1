@@ -1,0 +1,115 @@
+# Vibe - Clean Folder Structure
+
+vibe-main/
+├── prisma/                    # Database schema
+│   └── schema.prisma
+│
+├── public/                    # Static assets
+│   ├── logo.svg
+│   └── favicon.ico
+│
+├── src/
+│   ├── app/                   # Next.js App Router
+│   │   ├── (home)/           # Home route group
+│   │   │   ├── layout.tsx    # Home layout
+│   │   │   ├── page.tsx      # Landing page
+│   │   │   ├── sign-in/      # Sign in page
+│   │   │   └── sign-up/      # Sign up page
+│   │   │
+│   │   ├── projects/         # Projects routes
+│   │   │   └── [projectId]/  # Dynamic project page
+│   │   │
+│   │   ├── api/              # API routes
+│   │   │   ├── generate/     # Streaming generation
+│   │   │   ├── validate-key/ # API key validation
+│   │   │   └── trpc/         # tRPC endpoint
+│   │   │
+│   │   ├── layout.tsx        # Root layout
+│   │   └── globals.css       # Global styles
+│   │
+│   ├── components/           # Reusable components
+│   │   ├── ui/              # UI primitives
+│   │   │   ├── button.tsx
+│   │   │   ├── dialog.tsx
+│   │   │   ├── input.tsx
+│   │   │   ├── select.tsx
+│   │   │   ├── tabs.tsx
+│   │   │   └── ...
+│   │   │
+│   │   ├── settings-dialog.tsx
+│   │   ├── user-control.tsx
+│   │   ├── file-explorer.tsx
+│   │   └── ...
+│   │
+│   ├── modules/             # Feature modules
+│   │   ├── home/           # Home module
+│   │   │   ├── ui/
+│   │   │   └── constants.ts
+│   │   │
+│   │   ├── projects/       # Projects module
+│   │   │   ├── ui/
+│   │   │   └── server/
+│   │   │
+│   │   └── messages/       # Messages module
+│   │       └── server/
+│   │
+│   ├── hooks/              # Custom React hooks
+│   │   ├── use-generate-stream.ts
+│   │   └── use-mobile.ts
+│   │
+│   ├── lib/                # Utilities
+│   │   ├── ai-types.ts
+│   │   ├── api-config.ts
+│   │   ├── fallback-helper.ts
+│   │   ├── settings-store.ts
+│   │   ├── sanitize.ts
+│   │   ├── rate-limit.ts
+│   │   ├── security.ts
+│   │   ├── utils.ts
+│   │   └── db.ts
+│   │
+│   ├── trpc/               # tRPC setup
+│   │   ├── routers/
+│   │   ├── client.tsx
+│   │   ├── server.tsx
+│   │   └── init.ts
+│   │
+│   ├── generated/          # Generated files
+│   │   └── prisma/
+│   │
+│   ├── middleware.ts       # Next.js middleware
+│   ├── prompt.ts          # AI prompts
+│   └── types.ts           # TypeScript types
+│
+├── .env.local             # Environment variables
+├── .gitignore
+├── next.config.ts
+├── package.json
+├── postcss.config.mjs
+├── tailwind.config.ts
+├── tsconfig.json
+└── README.md
+
+## Key Directories
+
+### /src/app
+Next.js 14 App Router structure with route groups and API routes
+
+### /src/components
+Reusable UI components and shared components
+
+### /src/modules
+Feature-based modules (home, projects, messages)
+
+### /src/lib
+Core utilities and helper functions
+
+### /src/hooks
+Custom React hooks for shared logic
+
+### /src/trpc
+tRPC API layer for type-safe backend communication
+
+## Total Files: ~80
+## Total Lines: ~8,000
+## Complexity: Low ✅

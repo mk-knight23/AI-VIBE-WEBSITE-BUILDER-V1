@@ -34,24 +34,24 @@ export function convertFilesToTreeItems(
     current[fileName] = null; 
   }
   
-  function convertNode(node: TreeNode, name?: string): TreeItem[] | TreeItem {
+  function convertNode(node: TreeNode, name?: string): TreeItem | TreeItem[] {
     const entries = Object.entries(node);
 
     if (entries.length === 0) {
-      return name || "";
+      return { id: name || "", name: name || "" };
     }
 
     const children: TreeItem[] = [];
 
     for (const [key, value] of entries) {
       if (value === null) {
-        children.push(key);
+        children.push({ id: key, name: key });
       } else {
         const subTree = convertNode(value, key);
         if (Array.isArray(subTree)) {
-          children.push([key, ...subTree]);
+          children.push({ id: key, name: key, children: subTree });
         } else {
-          children.push([key, subTree]);
+          children.push({ id: key, name: key, children: [subTree] });
         }
       }
     }

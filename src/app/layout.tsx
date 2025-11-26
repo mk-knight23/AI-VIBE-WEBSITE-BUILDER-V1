@@ -1,24 +1,13 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import { TRPCReactProvider } from "@/trpc/client";
+import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "next-themes";
-import {ClerkProvider} from '@clerk/nextjs';
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { TRPCReactProvider } from "@/trpc/client";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Vibe - AI Website Builder",
-  description: "Build stunning websites with AI in seconds. Multi-provider support with free models available.",
+  description: "Build stunning websites with AI in seconds",
 };
 
 export default function RootLayout({
@@ -27,24 +16,30 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
-    <TRPCReactProvider>
+    <ClerkProvider
+      appearance={{
+        baseTheme: undefined,
+      }}
+      publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+      afterSignOutUrl="/"
+      signInFallbackRedirectUrl="/"
+      signUpFallbackRedirectUrl="/"
+    >
       <html lang="en" suppressHydrationWarning>
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        >
+        <body>
           <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
           >
-          <Toaster />
-          {children}
+            <TRPCReactProvider>
+              {children}
+              <Toaster />
+            </TRPCReactProvider>
           </ThemeProvider>
         </body>
       </html>
-    </TRPCReactProvider>
     </ClerkProvider>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Settings2Icon, KeyIcon, CheckIcon, EyeIcon, EyeOffIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { toast } from "sonner";
 
 export const SettingsDialog = () => {
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { provider, model, providers, setProvider, setModel, setProviderConfig } = useSettingsStore();
   const [tempKeys, setTempKeys] = useState(providers);
   const [showKeys, setShowKeys] = useState<Record<Provider, boolean>>({
@@ -22,14 +23,63 @@ export const SettingsDialog = () => {
     agentrouter: false,
     routeway: false,
   });
-
-  // Update tempKeys when providers change
-  useState(() => {
-    setTempKeys(providers);
+  const [validating, setValidating] = useState<Record<Provider, boolean>>({
+    openrouter: false,
+    megallm: false,
+    agentrouter: false,
+    routeway: false,
+  });
+  const [validationStatus, setValidationStatus] = useState<Record<Provider, 'valid' | 'invalid' | null>>({
+    openrouter: null,
+    megallm: null,
+    agentrouter: null,
+    routeway: null,
   });
 
+  useEffect(() => {
+    setMounted(true);
+    setTempKeys(providers);
+  }, [providers]);
+
+  const validateApiKey = async (prov: Provider) => {
+    const config = tempKeys[prov];
+    if (!config?.apiKey?.trim()) {
+      toast.error(`Please enter an API key for ${PROVIDER_INFO[prov].name}`);
+      return;
+    }
+
+    setValidating(prev => ({ ...prev, [prov]: true }));
+    setValidationStatus(prev => ({ ...prev, [prov]: null }));
+
+    try {
+      const response = await fetch('/api/validate-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: prov,
+          apiKey: config.apiKey.trim(),
+          baseUrl: config.baseUrl,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.valid) {
+        setValidationStatus(prev => ({ ...prev, [prov]: 'valid' }));
+        toast.success(`${PROVIDER_INFO[prov].name} API key is valid ✓`);
+      } else {
+        setValidationStatus(prev => ({ ...prev, [prov]: 'invalid' }));
+        toast.error(`${PROVIDER_INFO[prov].name} API key is invalid: ${result.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      setValidationStatus(prev => ({ ...prev, [prov]: 'invalid' }));
+      toast.error(`Failed to validate ${PROVIDER_INFO[prov].name} API key`);
+    } finally {
+      setValidating(prev => ({ ...prev, [prov]: false }));
+    }
+  };
+
   const handleSave = () => {
-    // Validate at least one provider has an API key
     const hasValidKey = Object.values(tempKeys).some(config => config?.apiKey?.trim().length > 0);
     
     if (!hasValidKey) {
@@ -37,18 +87,26 @@ export const SettingsDialog = () => {
       return;
     }
 
-    // Validate current provider has API key
-    if (!tempKeys[provider]?.apiKey?.trim()) {
-      toast.error(`Please configure API key for ${PROVIDER_INFO[provider].name}`);
-      return;
-    }
-
+    // Save all configurations
     Object.entries(tempKeys).forEach(([prov, config]) => {
       if (config) {
         setProviderConfig(prov as Provider, config);
       }
     });
-    toast.success("Settings saved successfully");
+
+    // If current provider has no key, switch to one that does
+    if (!tempKeys[provider]?.apiKey?.trim()) {
+      const providerWithKey = (Object.keys(tempKeys) as Provider[]).find(
+        p => tempKeys[p]?.apiKey?.trim()
+      );
+      if (providerWithKey) {
+        setProvider(providerWithKey);
+        toast.success(`Settings saved! Switched to ${PROVIDER_INFO[providerWithKey].name}`);
+      }
+    } else {
+      toast.success("Settings saved successfully");
+    }
+
     setOpen(false);
   };
 
@@ -56,13 +114,19 @@ export const SettingsDialog = () => {
     setShowKeys(prev => ({ ...prev, [prov]: !prev[prov] }));
   };
 
+  const hasAnyKey = mounted && Object.values(providers).some(p => p?.apiKey?.trim());
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="icon" className="relative">
+        <Button variant="outline" size="icon" className="relative" title="AI Provider Settings">
           <Settings2Icon className="h-4 w-4" />
-          {providers[provider]?.apiKey && (
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full" />
+          {mounted && (
+            hasAnyKey ? (
+              <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full" />
+            ) : (
+              <span className="absolute -top-1 -right-1 w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
+            )
           )}
         </Button>
       </DialogTrigger>
@@ -73,6 +137,17 @@ export const SettingsDialog = () => {
             AI Provider Settings
           </DialogTitle>
         </DialogHeader>
+
+        {!hasAnyKey && mounted && (
+          <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-4 mb-4">
+            <p className="text-sm text-orange-600 dark:text-orange-400 font-medium">
+              ⚠️ No API keys configured. Add at least one provider key to start generating websites.
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Get free keys: <a href="https://openrouter.ai/keys" target="_blank" rel="noopener" className="underline">OpenRouter</a> or <a href="https://routeway.ai" target="_blank" rel="noopener" className="underline">Routeway</a>
+            </p>
+          </div>
+        )}
 
         <Tabs defaultValue="provider" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
@@ -139,8 +214,11 @@ export const SettingsDialog = () => {
                 <div className="flex items-center gap-2">
                   <div className={cn("w-2 h-2 rounded-full", PROVIDER_INFO[prov].color)} />
                   <Label className="text-base font-semibold">{PROVIDER_INFO[prov].name}</Label>
-                  {providerConfig.apiKey && (
+                  {validationStatus[prov] === 'valid' && (
                     <CheckIcon className="h-4 w-4 text-green-500 ml-auto" />
+                  )}
+                  {validationStatus[prov] === 'invalid' && (
+                    <span className="h-4 w-4 text-red-500 ml-auto">✗</span>
                   )}
                 </div>
                 <div className="space-y-2">
@@ -151,12 +229,13 @@ export const SettingsDialog = () => {
                       type={showKeys[prov] ? "text" : "password"}
                       placeholder={`Enter ${PROVIDER_INFO[prov].name} API key`}
                       value={providerConfig.apiKey}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setTempKeys({
                           ...tempKeys,
                           [prov]: { ...providerConfig, apiKey: e.target.value.trim() },
-                        })
-                      }
+                        });
+                        setValidationStatus(prev => ({ ...prev, [prov]: null }));
+                      }}
                       className="pl-10 pr-10"
                       autoComplete="off"
                     />
@@ -174,6 +253,18 @@ export const SettingsDialog = () => {
                       )}
                     </Button>
                   </div>
+                  {providerConfig.apiKey && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => validateApiKey(prov)}
+                      disabled={validating[prov]}
+                      className="w-full"
+                    >
+                      {validating[prov] ? "Validating..." : "Test API Key"}
+                    </Button>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm text-muted-foreground">Base URL</Label>

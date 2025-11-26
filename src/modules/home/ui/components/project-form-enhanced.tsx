@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormField } from "@/components/ui/form";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { useSettingsStore, PROVIDER_MODELS } from "@/lib/settings-store";
+import { useSettingsStore, PROVIDER_MODELS, PROVIDER_INFO, type Provider } from "@/lib/settings-store";
 import { Badge } from "@/components/ui/badge";
 
 const formSchema = z.object({
@@ -49,9 +49,11 @@ export const ProjectFormEnhanced = () => {
   });
 
   const { mutate, isPending } = useMutation(trpcProxy.projects.create.mutationOptions({
-    onSuccess: (project) => {
+    onSuccess: async (project) => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
-      toast.success("Project created! Building your app...");
+      toast.success("Project created! Redirecting...");
+      
+      // Navigate to project page where generation will start
       router.push(`/projects/${project.id}`);
     },
     onError: (error: any) => {
@@ -62,10 +64,32 @@ export const ProjectFormEnhanced = () => {
   const onSubmit = (data: z.infer<typeof formSchema>) => {
     const config = getActiveConfig();
     
-    // Validate API configuration
+    // Check if current provider has API key, if not find one that does
     if (!config?.apiKey?.trim()) {
-      toast.error("Please configure your API key in settings", {
-        description: "Click the settings icon (⚙️) to add your API key"
+      const providers = useSettingsStore.getState().providers;
+      const providerWithKey = (Object.keys(providers) as Provider[]).find(
+        p => providers[p]?.apiKey?.trim()
+      );
+
+      if (!providerWithKey) {
+        toast.error("Please configure at least one API key in settings", {
+          description: "Click the settings icon (⚙️) to add your API key"
+        });
+        return;
+      }
+
+      // Switch to provider with key
+      useSettingsStore.getState().setProvider(providerWithKey);
+      toast.info(`Using ${PROVIDER_INFO[providerWithKey].name}`);
+      
+      // Use the new provider's config
+      const newConfig = providers[providerWithKey];
+      mutate({
+        value: data.value.trim(),
+        provider: providerWithKey,
+        model: useSettingsStore.getState().model,
+        apiKey: newConfig.apiKey,
+        baseUrl: newConfig.baseUrl,
       });
       return;
     }
@@ -75,7 +99,6 @@ export const ProjectFormEnhanced = () => {
       return;
     }
 
-    // Validate input
     if (!data.value.trim()) {
       toast.error("Please describe what you want to build");
       return;

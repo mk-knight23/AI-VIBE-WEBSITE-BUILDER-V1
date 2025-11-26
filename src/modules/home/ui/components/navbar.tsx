@@ -259,15 +259,13 @@ export const Navbar = () => {
 
                 {/* Interactive buttons section with mobile responsiveness */}
                 <div className="flex items-center gap-2 sm:gap-3">
-                    {/* Settings button */}
-                    <SignedIn>
-                        <motion.div
-                            whileHover={{ scale: 1.05, y: -2 }}
-                            whileTap={{ scale: 0.95 }}
-                        >
-                            <SettingsDialog />
-                        </motion.div>
-                    </SignedIn>
+                    {/* Settings button - always visible */}
+                    <motion.div
+                        whileHover={{ scale: 1.05, y: -2 }}
+                        whileTap={{ scale: 0.95 }}
+                    >
+                        <SettingsDialog />
+                    </motion.div>
 
                     {/* Theme toggle button */}
                     <motion.div
@@ -307,55 +305,29 @@ export const Navbar = () => {
                         </Button>
                     </motion.div>
 
-                    {/* Auth buttons with mobile responsiveness */}
-                    <SignedOut>
-                        <div className="flex gap-2 sm:gap-3">
-                            <SignUpButton>
+                    {/* Sign in button - always visible */}
+                    <SignInButton>
+                        <motion.div
+                            whileHover={{ scale: 1.05, y: -2 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            <Button 
+                                variant="outline" 
+                                size="sm"
+                                className="relative overflow-hidden group bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border-indigo-400/30 hover:border-indigo-400/60 transition-all duration-300 min-h-[40px] sm:min-h-auto px-3 sm:px-4"
+                            >
                                 <motion.div
-                                    whileHover={{ scale: 1.05, y: -2 }}
-                                    whileTap={{ scale: 0.95 }}
-                                >
-                                    <Button 
-                                        variant="outline" 
-                                        size="sm"
-                                        className="relative overflow-hidden group border-white/20 hover:border-indigo-400/50 transition-all duration-300 min-h-[40px] sm:min-h-auto px-3 sm:px-4"
-                                    >
-                                        <motion.div
-                                            className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 to-purple-500/0 group-hover:from-indigo-500/10 group-hover:to-purple-500/10 transition-all duration-300"
-                                        />
-                                        <span className="relative text-xs sm:text-sm">Sign up</span>
-                                        
-                                        {/* Shimmer effect on hover */}
-                                        <motion.div
-                                            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"
-                                        />
-                                    </Button>
-                                </motion.div>
-                            </SignUpButton>
-                            <SignInButton>
+                                    className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 to-purple-500/0 group-hover:from-indigo-500/20 group-hover:to-purple-500/20 transition-all duration-300"
+                                />
+                                <span className="relative text-xs sm:text-sm">Sign in</span>
+                                
+                                {/* Glow effect on hover */}
                                 <motion.div
-                                    whileHover={{ scale: 1.05, y: -2 }}
-                                    whileTap={{ scale: 0.95 }}
-                                >
-                                    <Button 
-                                        variant="outline" 
-                                        size="sm"
-                                        className="relative overflow-hidden group bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border-indigo-400/30 hover:border-indigo-400/60 transition-all duration-300 min-h-[40px] sm:min-h-auto px-3 sm:px-4"
-                                    >
-                                        <motion.div
-                                            className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 to-purple-500/0 group-hover:from-indigo-500/20 group-hover:to-purple-500/20 transition-all duration-300"
-                                        />
-                                        <span className="relative text-xs sm:text-sm">Sign in</span>
-                                        
-                                        {/* Glow effect on hover */}
-                                        <motion.div
-                                            className="absolute inset-0 bg-gradient-to-r from-indigo-400/0 to-purple-400/0 group-hover:from-indigo-400/20 group-hover:to-purple-400/20 blur-sm transition-all duration-300"
-                                        />
-                                    </Button>
-                                </motion.div>
-                            </SignInButton>
-                        </div>
-                    </SignedOut>
+                                    className="absolute inset-0 bg-gradient-to-r from-indigo-400/0 to-purple-400/0 group-hover:from-indigo-400/20 group-hover:to-purple-400/20 blur-sm transition-all duration-300"
+                                />
+                            </Button>
+                        </motion.div>
+                    </SignInButton>
                     
                     <SignedIn>
                         <motion.div

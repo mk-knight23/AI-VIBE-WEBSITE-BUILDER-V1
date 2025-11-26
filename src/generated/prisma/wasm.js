@@ -142,15 +142,52 @@ exports.Prisma.FragmentScalarFieldEnum = {
   id: 'id',
   messageId: 'messageId',
   sandboxUrl: 'sandboxUrl',
+  sandboxId: 'sandboxId',
   title: 'title',
+  content: 'content',
   files: 'files',
+  projectId: 'projectId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
+};
+
+exports.Prisma.ProjectVersionScalarFieldEnum = {
+  id: 'id',
+  projectId: 'projectId',
+  snapshot: 'snapshot',
+  label: 'label',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.AIUsageScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  provider: 'provider',
+  model: 'model',
+  tokensUsed: 'tokensUsed',
+  cost: 'cost',
+  requestId: 'requestId',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.APIKeyScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  provider: 'provider',
+  encryptedKey: 'encryptedKey',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  lastUsed: 'lastUsed'
 };
 
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
+};
+
+exports.Prisma.NullableJsonNullValueInput = {
+  DbNull: Prisma.DbNull,
+  JsonNull: Prisma.JsonNull
 };
 
 exports.Prisma.JsonNullValueInput = {
@@ -167,6 +204,11 @@ exports.Prisma.JsonNullValueFilter = {
   JsonNull: Prisma.JsonNull,
   AnyNull: Prisma.AnyNull
 };
+
+exports.Prisma.NullsOrder = {
+  first: 'first',
+  last: 'last'
+};
 exports.MessageRole = exports.$Enums.MessageRole = {
   USER: 'USER',
   ASSISTANT: 'ASSISTANT'
@@ -180,7 +222,10 @@ exports.MessageType = exports.$Enums.MessageType = {
 exports.Prisma.ModelName = {
   Project: 'Project',
   Message: 'Message',
-  Fragment: 'Fragment'
+  Fragment: 'Fragment',
+  ProjectVersion: 'ProjectVersion',
+  AIUsage: 'AIUsage',
+  APIKey: 'APIKey'
 };
 
 /**

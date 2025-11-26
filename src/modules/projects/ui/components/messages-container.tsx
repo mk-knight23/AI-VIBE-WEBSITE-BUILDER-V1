@@ -22,13 +22,12 @@ export const MessagesContainer = ({
   const bottomRef = useRef<HTMLDivElement>(null);
   const lastAssistantMessageIdRef = useRef<string | null>(null);
 
-  const { data: messages } = useSuspenseQuery(
+  const { data: messages, refetch } = useSuspenseQuery(
     trpcProxy.messages.getMany.queryOptions(
       {
         projectId: projectId,
       },
       {
-        // TODO: Temporary live message update
         refetchInterval: 2000,
       }
     )
@@ -43,6 +42,7 @@ export const MessagesContainer = ({
         lastAssistantMessage?.fragment && 
         lastAssistantMessage.id !== lastAssistantMessageIdRef.current
     ) {
+        console.log("Setting fragment:", lastAssistantMessage.fragment);
         setActiveFragment(lastAssistantMessage.fragment);
         lastAssistantMessageIdRef.current = lastAssistantMessage.id;
     }
