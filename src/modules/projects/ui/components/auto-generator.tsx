@@ -32,7 +32,7 @@ export function AutoGenerator({ projectId, hasAssistantMessage, onComplete }: Pr
     // Check if current provider has API key, if not find one that does
     if (!config?.apiKey) {
       const providers = useSettingsStore.getState().providers;
-      const providerWithKey = (Object.keys(providers) as any[]).find(
+      const providerWithKey = (Object.keys(providers) as (keyof typeof providers)[]).find(
         p => providers[p]?.apiKey?.trim()
       );
 
@@ -45,7 +45,7 @@ export function AutoGenerator({ projectId, hasAssistantMessage, onComplete }: Pr
 
       // Switch to provider with key
       useSettingsStore.getState().setProvider(providerWithKey);
-      const newConfig = providers[providerWithKey];
+      const newConfig = providers[providerWithKey as keyof typeof providers];
       
       try {
         const result = await generate({

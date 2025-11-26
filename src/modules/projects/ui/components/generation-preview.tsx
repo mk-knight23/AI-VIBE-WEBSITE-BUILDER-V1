@@ -46,7 +46,7 @@ export function GenerationPreview({ projectId, fragment, onFilesGenerated }: Pro
     
     if (!config?.apiKey) {
       const providers = useSettingsStore.getState().providers;
-      const providerWithKey = (Object.keys(providers) as any[]).find(
+      const providerWithKey = (Object.keys(providers) as (keyof typeof providers)[]).find(
         p => providers[p]?.apiKey?.trim()
       );
 
