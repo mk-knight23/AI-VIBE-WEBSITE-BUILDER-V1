@@ -1,6 +1,15 @@
 # Vibe - AI Website Builder
 
+[![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/mk-knight23/vibe-main)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Next.js](https://img.shields.io/badge/Next.js-15.1.3-black.svg)](https://nextjs.org)
+[![React](https://img.shields.io/badge/React-19.0.0-blue.svg)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7.2-blue.svg)](https://www.typescriptlang.org)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/mk-knight23/vibe-main)
+
 Build stunning websites with AI in seconds using real-time streaming.
+
+> **Version 3.0.0** - Complete architecture overhaul with 4 AI providers, real-time streaming, and modern tech stack.
 
 ## 🚀 Quick Start
 
