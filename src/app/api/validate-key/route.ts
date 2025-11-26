@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 const VALIDATION_MODELS: Record<string, string> = {
   openrouter: "x-ai/grok-4.1-fast:free",
