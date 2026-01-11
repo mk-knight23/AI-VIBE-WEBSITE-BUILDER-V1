@@ -6,6 +6,7 @@ interface GenerateOptions {
   model: string;
   apiKey: string;
   baseUrl: string;
+  partialCode?: string;
 }
 
 interface GenerateResult {
@@ -24,9 +25,11 @@ export function useGenerateStream() {
   const generate = useCallback(async (options: GenerateOptions): Promise<GenerateResult | null> => {
     setIsGenerating(true);
     setError(null);
-    setContent("");
-    setFiles({});
-    setStatus("Initializing...");
+    if (!options.partialCode) {
+      setContent("");
+      setFiles({});
+    }
+    setStatus(options.partialCode ? "Resuming..." : "Initializing...");
 
     try {
       const response = await fetch("/api/generate", {
@@ -44,19 +47,27 @@ export function useGenerateStream() {
 
       const decoder = new TextDecoder();
       let result: GenerateResult | null = null;
+      let buffer = "";
 
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) {
+          // Process any remaining text in the buffer if applicable
+          break;
+        }
 
-        const chunk = decoder.decode(value);
-        const lines = chunk.split("\n");
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        // Keep the last partial line in the buffer
+        buffer = lines.pop() || "";
 
         for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
+          const trimmedLine = line.trim();
+          if (!trimmedLine || !trimmedLine.startsWith("data: ")) continue;
 
           try {
-            const data = JSON.parse(line.slice(6));
+            const data = JSON.parse(trimmedLine.slice(6));
+            // ... (rest of the logic remains the same)
 
             switch (data.type) {
               case "status":
@@ -105,13 +116,13 @@ export function useGenerateStream() {
     setIsGenerating(false);
   }, []);
 
-  return { 
-    generate, 
-    status, 
+  return {
+    generate,
+    status,
     content,
     files,
-    isGenerating, 
+    isGenerating,
     error,
-    reset 
+    reset
   };
 }

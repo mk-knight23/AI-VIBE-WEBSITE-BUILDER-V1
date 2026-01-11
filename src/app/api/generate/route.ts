@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { Sandbox } from "@e2b/code-interpreter";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/db";
+import { PROMPT } from "@/prompt";
 
 const E2B_API_KEY = process.env.E2B_API_KEY;
 const E2B_TEMPLATE = process.env.E2B_SANDBOX_TEMPLATE || "vibe-kazi-test3";
@@ -11,55 +12,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const maxDuration = 300;
 
-const SYSTEM_PROMPT = `You are an expert web developer. Create a complete, production-ready website based on the user's request.
-
-CRITICAL REQUIREMENTS:
-- ALWAYS generate exactly 3 separate files: index.html, styles.css, and script.js
-- NEVER use inline styles or inline scripts in HTML
-- Put ALL CSS in styles.css file
-- Put ALL JavaScript in script.js file
-- Use modern, responsive design
-- Make it visually appealing with smooth animations
-- Ensure mobile responsiveness
-
-OUTPUT FORMAT (MANDATORY):
-You MUST return exactly 3 files in this format:
-
-FILE: index.html
-\`\`\`html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Website Title</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <!-- HTML content only -->
-  <script src="script.js"></script>
-</body>
-</html>
-\`\`\`
-
-FILE: styles.css
-\`\`\`css
-/* All CSS styles here */
-\`\`\`
-
-FILE: script.js
-\`\`\`javascript
-// All JavaScript code here
-\`\`\`
-
-IMPORTANT: Always generate all 3 files even for simple websites.`;
-
-const PROVIDERS = [
-  { name: "openrouter", envKey: "OPENROUTER_API_KEY", header: "Authorization" },
-  { name: "routeway", envKey: "ROUTEWAY_API_KEY", header: "Authorization" },
-  { name: "megallm", envKey: "MEGALLM_API_KEY", header: "Authorization" },
-  { name: "agentrouter", envKey: "AGENTROUTER_API_KEY", header: "X-API-Key" },
-];
+import { getWeightedProvider, getFallbackProviders } from "@/lib/ai-selection";
 
 async function tryGeneration(
   provider: string,
@@ -67,7 +20,8 @@ async function tryGeneration(
   apiKey: string,
   baseUrl: string,
   userMessage: string,
-  send: (data: any) => void
+  send: (data: any) => void,
+  partialCode?: string
 ): Promise<string> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -79,15 +33,22 @@ async function tryGeneration(
     headers["Authorization"] = `Bearer ${apiKey}`;
   }
 
+  const messages: any[] = [
+    { role: "system", content: PROMPT },
+    { role: "user", content: userMessage },
+  ];
+
+  if (partialCode) {
+    messages.push({ role: "assistant", content: partialCode });
+    messages.push({ role: "user", content: "Continue generating the rest of the application. Do not repeat what you already wrote, just continue from the last fragment." });
+  }
+
   const response = await fetch(`${baseUrl}/chat/completions`, {
     method: "POST",
     headers,
     body: JSON.stringify({
       model,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: userMessage },
-      ],
+      messages,
       stream: true,
       temperature: 0.7,
       max_tokens: 4000,
@@ -95,26 +56,32 @@ async function tryGeneration(
   });
 
   if (!response.ok) {
-    throw new Error(`${provider} failed with status ${response.status}`);
+    const errorText = await response.text();
+    throw new Error(`${provider} failed with status ${response.status}: ${errorText}`);
   }
 
   const reader = response.body?.getReader();
   if (!reader) throw new Error("No response stream");
 
   const decoder = new TextDecoder();
-  let fullResponse = "";
+  let fullResponse = partialCode || "";
+  let buffer = "";
 
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
 
-    const chunk = decoder.decode(value);
-    const lines = chunk.split("\n").filter((line) => line.trim().startsWith("data:"));
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
 
     for (const line of lines) {
-      const data = line.replace(/^data: /, "").trim();
-      if (data === "[DONE]") continue;
-      if (!data) continue;
+      const trimmedLine = line.trim();
+      if (!trimmedLine) continue;
+      if (trimmedLine === "data: [DONE]") break;
+      if (!trimmedLine.startsWith("data:")) continue;
+
+      const data = trimmedLine.replace(/^data:\s*/, "").trim();
 
       try {
         const parsed = JSON.parse(data);
@@ -124,7 +91,8 @@ async function tryGeneration(
           send({ type: "content", content: fullResponse });
         }
       } catch (e) {
-        // Skip invalid JSON
+        // Log parse error but continue - might be truncated JSON in a line
+        console.warn(`Failed to parse SSE data chunk from ${provider}:`, data);
       }
     }
   }
@@ -138,7 +106,7 @@ export async function POST(req: NextRequest) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  const { projectId, provider, model, apiKey, baseUrl } = await req.json();
+  const { projectId, provider, model, apiKey, baseUrl, partialCode } = await req.json();
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
@@ -171,8 +139,8 @@ export async function POST(req: NextRequest) {
         // Try primary provider first
         if (apiKey && baseUrl) {
           try {
-            send({ type: "status", message: `✨ Trying ${provider}...` });
-            fullResponse = await tryGeneration(provider, model, apiKey, baseUrl, userMessage, send);
+            send({ type: "status", message: `✨ Trying ${usedProvider}...` });
+            fullResponse = await tryGeneration(usedProvider, usedModel, apiKey, baseUrl, userMessage, send, partialCode);
           } catch (error: any) {
             console.log(`Primary provider ${provider} failed:`, error.message);
             send({ type: "status", message: `⚠️ ${provider} failed, trying fallback...` });
@@ -181,40 +149,30 @@ export async function POST(req: NextRequest) {
 
         // Try fallback providers if primary failed
         if (!fullResponse) {
-          for (const fallbackProvider of PROVIDERS) {
-            const fallbackKey = process.env[fallbackProvider.envKey];
+          const fallbackProviders = getFallbackProviders(provider);
+          for (const fallback of fallbackProviders) {
+            const fallbackKey = process.env[fallback.envKey];
             if (!fallbackKey) continue;
 
             try {
-              send({ type: "status", message: `🔄 Trying ${fallbackProvider.name}...` });
-              
-              const fallbackBaseUrl = 
-                fallbackProvider.name === "openrouter" ? "https://openrouter.ai/api/v1" :
-                fallbackProvider.name === "routeway" ? "https://api.routeway.ai/v1" :
-                fallbackProvider.name === "megallm" ? "https://ai.megallm.io/v1" :
-                "https://agentrouter.org/v1";
-
-              const fallbackModel = 
-                fallbackProvider.name === "openrouter" ? "x-ai/grok-4.1-fast:free" :
-                fallbackProvider.name === "routeway" ? "kimi-k2-0905:free" :
-                fallbackProvider.name === "megallm" ? "llama3-8b-instruct" :
-                "deepseek-v3.1";
+              send({ type: "status", message: `🔄 Trying ${fallback.name}...` });
 
               fullResponse = await tryGeneration(
-                fallbackProvider.name,
-                fallbackModel,
+                fallback.name,
+                fallback.defaultModel,
                 fallbackKey,
-                fallbackBaseUrl,
+                fallback.baseUrl,
                 userMessage,
-                send
+                send,
+                partialCode
               );
 
-              usedProvider = fallbackProvider.name;
-              usedModel = fallbackModel;
-              send({ type: "status", message: `✅ Using ${fallbackProvider.name}` });
+              usedProvider = fallback.name;
+              usedModel = fallback.defaultModel;
+              send({ type: "status", message: `✅ Using ${fallback.name}` });
               break;
             } catch (error: any) {
-              console.log(`Fallback ${fallbackProvider.name} failed:`, error.message);
+              console.log(`Fallback ${fallback.name} failed:`, error.message);
               continue;
             }
           }
@@ -224,24 +182,43 @@ export async function POST(req: NextRequest) {
           throw new Error("All AI providers failed. Please check your API keys in settings.");
         }
 
-        send({ type: "status", message: "📝 Extracting files..." });
+        send({ type: "status", message: "📝 Extracting and healing files..." });
 
-        // Parse files from response
+        // Auto-healing parser logic
         const files: Record<string, string> = {};
+
+        // Ensure the response has balanced code blocks for extraction
+        let repairedResponse = fullResponse;
+        const openBlocks = (repairedResponse.match(/```/g) || []).length;
+        if (openBlocks % 2 !== 0) {
+          repairedResponse += "\n```"; // Close dangling code block
+        }
+
         const fileRegex = /FILE:\s*([^\n]+)\n```(?:html|css|javascript|js)?\n([\s\S]*?)```/g;
         let match;
 
-        while ((match = fileRegex.exec(fullResponse)) !== null) {
+        while ((match = fileRegex.exec(repairedResponse)) !== null) {
           const filename = match[1].trim();
           const content = match[2].trim();
           files[filename] = content;
         }
 
-        // If no files found, extract HTML from code blocks
+        // Fallback: If no files found via FILE: tag, try extracting from generic code blocks
         if (Object.keys(files).length === 0) {
-          const codeMatch = fullResponse.match(/```html\n([\s\S]*?)```/) || 
-                           fullResponse.match(/```\n([\s\S]*?)```/);
-          let code = codeMatch ? codeMatch[1].trim() : fullResponse.trim();
+          const htmlMatch = repairedResponse.match(/```html\n([\s\S]*?)```/i);
+          const cssMatch = repairedResponse.match(/```css\n([\s\S]*?)```/i);
+          const jsMatch = repairedResponse.match(/```(?:javascript|js)\n([\s\S]*?)```/i);
+
+          if (htmlMatch) files["index.html"] = htmlMatch[1].trim();
+          if (cssMatch) files["styles.css"] = cssMatch[1].trim();
+          if (jsMatch) files["script.js"] = jsMatch[1].trim();
+        }
+
+        // Second-level Fallback: Use everything as index.html if still empty
+        if (Object.keys(files).length === 0) {
+          let code = repairedResponse.trim();
+          // Remove potential leading/trailing markdown code block indicators if they weren't matched
+          code = code.replace(/^```[a-z]*\n/i, "").replace(/\n```$/i, "");
 
           if (!code.includes("<!DOCTYPE") && !code.includes("<html")) {
             code = `<!DOCTYPE html>
@@ -275,10 +252,10 @@ export async function POST(req: NextRequest) {
 
         // Start HTTP server in background and wait for it to be ready
         await sandbox.commands.run("python3 -m http.server 8000 &");
-        
+
         // Wait longer for server to start
         await new Promise((resolve) => setTimeout(resolve, 3000));
-        
+
         // Verify server is running
         try {
           await sandbox.commands.run("curl -s http://localhost:8000 > /dev/null");
@@ -318,7 +295,8 @@ Your website is ready! Check the Preview tab to see it live, and the Code tab to
           data: {
             projectId,
             messageId: message.id,
-            content: JSON.stringify(files, null, 2),
+            content: repairedResponse, // Save the raw LLM response for recovery/search
+            files: files as any, // Save the parsed file object for the UI
             sandboxUrl: previewUrl,
             sandboxId: sandbox.sandboxId,
           },
@@ -334,11 +312,11 @@ Your website is ready! Check the Preview tab to see it live, and the Code tab to
         controller.close();
       } catch (error: any) {
         console.error("Generation error:", error);
-        send({ 
-          type: "error", 
-          message: error.message || "Generation failed. Please try again." 
+        send({
+          type: "error",
+          message: error.message || "Generation failed. Please try again."
         });
-        
+
         if (sandbox) {
           try {
             await sandbox.kill();
@@ -346,7 +324,7 @@ Your website is ready! Check the Preview tab to see it live, and the Code tab to
             console.error("Failed to kill sandbox:", e);
           }
         }
-        
+
         controller.close();
       }
     },

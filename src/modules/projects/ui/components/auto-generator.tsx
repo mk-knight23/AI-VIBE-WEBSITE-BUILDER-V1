@@ -26,9 +26,9 @@ export function AutoGenerator({ projectId, hasAssistantMessage, onComplete }: Pr
     }
   }, [projectId, hasAssistantMessage, hasStarted, isGenerating]);
 
-  const startGeneration = async () => {
+  const startGeneration = async (partialCode?: string) => {
     const config = getActiveConfig();
-    
+
     // Check if current provider has API key, if not find one that does
     if (!config?.apiKey) {
       const providers = useSettingsStore.getState().providers;
@@ -46,7 +46,7 @@ export function AutoGenerator({ projectId, hasAssistantMessage, onComplete }: Pr
       // Switch to provider with key
       useSettingsStore.getState().setProvider(providerWithKey);
       const newConfig = providers[providerWithKey as keyof typeof providers];
-      
+
       try {
         const result = await generate({
           projectId,
@@ -54,6 +54,7 @@ export function AutoGenerator({ projectId, hasAssistantMessage, onComplete }: Pr
           model: useSettingsStore.getState().model,
           apiKey: newConfig.apiKey,
           baseUrl: newConfig.baseUrl,
+          partialCode,
         });
 
         if (result) {
@@ -75,6 +76,7 @@ export function AutoGenerator({ projectId, hasAssistantMessage, onComplete }: Pr
         model,
         apiKey: config.apiKey,
         baseUrl: config.baseUrl,
+        partialCode,
       });
 
       if (result) {
@@ -110,12 +112,12 @@ export function AutoGenerator({ projectId, hasAssistantMessage, onComplete }: Pr
           {error && (
             <AlertCircleIcon className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
           )}
-          
+
           <div className="flex-1 min-w-0">
             <div className="font-medium text-sm mb-1">
               {error ? "Generation Failed" : "Generating Website"}
             </div>
-            
+
             <div className="text-sm text-muted-foreground mb-3">
               {error || status}
             </div>
@@ -127,9 +129,16 @@ export function AutoGenerator({ projectId, hasAssistantMessage, onComplete }: Pr
             )}
 
             {error && (
-              <Button onClick={retry} size="sm" variant="outline" className="mt-2">
-                Retry
-              </Button>
+              <div className="flex gap-2 mt-2">
+                <Button onClick={retry} size="sm" variant="outline">
+                  Retry
+                </Button>
+                {content && (
+                  <Button onClick={() => startGeneration(content)} size="sm" variant="outline">
+                    Resume
+                  </Button>
+                )}
+              </div>
             )}
           </div>
         </div>

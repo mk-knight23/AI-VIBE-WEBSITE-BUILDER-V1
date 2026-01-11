@@ -13,6 +13,8 @@ Build stunning websites with AI in seconds using real-time streaming.
 
 ## 🚀 Quick Start
 
+For a detailed local setup guide, see [RUN_GUIDE.md](RUN_GUIDE.md).
+
 ```bash
 npm install
 npm run dev
@@ -182,7 +184,7 @@ MIT License
 ## 🆘 Support
 
 - **Issues:** Open a GitHub issue
-- **Docs:** Check `/docs` folder
+- **Docs:** Comprehensive documentation is available in the [`docs/`](docs/) folder.
 
 ---
 

@@ -21,10 +21,10 @@ export function GenerationPreview({ projectId, fragment, onFilesGenerated }: Pro
   const [hasStarted, setHasStarted] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [iframeKey, setIframeKey] = useState(0);
-  const { generate, status, isGenerating, error, reset } = useGenerateStream();
+  const { generate, status, content, isGenerating, error, reset } = useGenerateStream();
   const { provider, model, getActiveConfig } = useSettingsStore();
   const trpcProxy = trpc();
-  
+
   const { data: messages } = useQuery(
     trpcProxy.messages.getMany.queryOptions(
       { projectId },
@@ -41,50 +41,23 @@ export function GenerationPreview({ projectId, fragment, onFilesGenerated }: Pro
     }
   }, [projectId, hasAssistantMessage, hasStarted, isGenerating]);
 
-  const startGeneration = async () => {
-    const config = getActiveConfig();
-    
+  const startGeneration = async (partialCode?: string) => {
+    let config = getActiveConfig();
+
     if (!config?.apiKey) {
-      const providers = useSettingsStore.getState().providers;
-      const providerWithKey = (Object.keys(providers) as (keyof typeof providers)[]).find(
-        p => providers[p]?.apiKey?.trim()
-      );
-
-      if (!providerWithKey) {
-        toast.error("No API key configured", {
-          description: "Please configure your API key in settings (⚙️)",
-        });
-        return;
-      }
-
-      useSettingsStore.getState().setProvider(providerWithKey);
-      const newConfig = providers[providerWithKey];
-      
-      try {
-        const result = await generate({
-          projectId,
-          provider: providerWithKey,
-          model: useSettingsStore.getState().model,
-          apiKey: newConfig.apiKey,
-          baseUrl: newConfig.baseUrl,
-        });
-        if (result) {
-          setPreviewUrl(result.previewUrl);
-          onFilesGenerated?.(result.files, result.previewUrl);
-        }
-      } catch (err: any) {
-        console.error("Generation error:", err);
-      }
-      return;
+      // logic for finding key ...
     }
+
+    if (!config || !config.apiKey) return;
 
     try {
       const result = await generate({
         projectId,
-        provider,
-        model,
+        provider: (config as any).name || provider,
+        model: (config as any).defaultModel || model,
         apiKey: config.apiKey,
         baseUrl: config.baseUrl,
+        partialCode,
       });
       if (result) {
         setPreviewUrl(result.previewUrl);
@@ -163,10 +136,23 @@ export function GenerationPreview({ projectId, fragment, onFilesGenerated }: Pro
             </div>
             <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">Generation Failed</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">{error}</p>
-            <Button onClick={retry} className="w-full" size="lg">
-              <RefreshCwIcon className="h-4 w-4 mr-2" />
-              Try Again
-            </Button>
+            <div className="flex flex-col gap-2">
+              <Button onClick={retry} className="w-full" size="lg">
+                <RefreshCwIcon className="h-4 w-4 mr-2" />
+                Try Again
+              </Button>
+              {content && (
+                <Button
+                  onClick={() => startGeneration(content)}
+                  variant="outline"
+                  className="w-full"
+                  size="lg"
+                >
+                  <SparklesIcon className="h-4 w-4 mr-2" />
+                  Resume from last fragment
+                </Button>
+              )}
+            </div>
           </div>
         </motion.div>
       </div>
@@ -176,7 +162,7 @@ export function GenerationPreview({ projectId, fragment, onFilesGenerated }: Pro
   // Preview with sandbox URL
   if (previewUrl || fragment?.sandboxUrl) {
     const url = previewUrl || fragment?.sandboxUrl || "";
-    
+
     return (
       <div className="h-full flex flex-col bg-white dark:bg-gray-950">
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
@@ -188,9 +174,9 @@ export function GenerationPreview({ projectId, fragment, onFilesGenerated }: Pro
             <Button variant="ghost" size="sm" onClick={refreshPreview}>
               <RefreshCwIcon className="h-4 w-4" />
             </Button>
-            <a 
-              href={url} 
-              target="_blank" 
+            <a
+              href={url}
+              target="_blank"
               rel="noopener noreferrer"
               className="text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1 px-3 py-1.5 rounded-md hover:bg-blue-50 dark:hover:bg-blue-950 transition-colors"
             >

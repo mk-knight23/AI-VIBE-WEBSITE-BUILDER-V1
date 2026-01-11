@@ -1,4 +1,5 @@
 "use client";
+import * as React from "react";
 
 import { Navbar } from "@/modules/home/ui/components/navbar";
 import { motion } from "framer-motion";
@@ -8,15 +9,21 @@ interface Props {
 }
 
 const Layout = ({ children }: Props) => {
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <main className="flex flex-col min-h-screen relative overflow-hidden">
       <Navbar />
-      
+
       {/* Animated Background */}
       <div className="fixed inset-0 w-full h-full pointer-events-none z-0">
         {/* Gradient base */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-blue-900/20" />
-        
+
         {/* Animated orbs */}
         <motion.div
           className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-blue-400/30 to-purple-400/30 rounded-full blur-3xl"
@@ -31,7 +38,7 @@ const Layout = ({ children }: Props) => {
             ease: "easeInOut",
           }}
         />
-        
+
         <motion.div
           className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-400/30 to-pink-400/30 rounded-full blur-3xl"
           animate={{
@@ -45,7 +52,7 @@ const Layout = ({ children }: Props) => {
             ease: "easeInOut",
           }}
         />
-        
+
         <motion.div
           className="absolute top-1/2 left-1/2 w-64 h-64 bg-gradient-to-br from-cyan-400/20 to-blue-400/20 rounded-full blur-2xl"
           animate={{
@@ -59,9 +66,9 @@ const Layout = ({ children }: Props) => {
             ease: "easeInOut",
           }}
         />
-        
+
         {/* Floating particles */}
-        {Array.from({ length: 20 }).map((_, i) => (
+        {mounted && Array.from({ length: 20 }).map((_, i) => (
           <motion.div
             key={i}
             className="absolute w-2 h-2 bg-gradient-to-br from-blue-400/40 to-purple-400/40 rounded-full"
@@ -83,11 +90,11 @@ const Layout = ({ children }: Props) => {
             }}
           />
         ))}
-        
+
         {/* Grid pattern */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(99,102,241,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(99,102,241,0.03)_1px,transparent_1px)] bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,black,transparent)]" />
       </div>
-      
+
       <div className="flex-1 flex flex-col px-4 pb-4 pt-20 relative z-10">{children}</div>
     </main>
   );
