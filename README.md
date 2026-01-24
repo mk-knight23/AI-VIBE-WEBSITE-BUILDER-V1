@@ -9,7 +9,7 @@
 
 Build stunning websites with AI in seconds using real-time streaming.
 
-> **Version 3.0.0** - Complete architecture overhaul with 4 AI providers, real-time streaming, and modern tech stack.
+> **Version 3.0.0** - Complete architecture overhaul with 4 AI  providers, real-time streaming, and modern tech stack.
 
 ## 🚀 Quick Start
 
