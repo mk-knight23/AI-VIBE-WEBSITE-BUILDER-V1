@@ -1,6 +1,7 @@
 {
   "name": "vibe",
   "version": "3.0.0",
+  "description": "Real-time AI website builder featuring multi-provider streaming, Prisma ORM, and Clerk authentication.",
   "private": true,
   "scripts": {
     "dev": "next dev",
