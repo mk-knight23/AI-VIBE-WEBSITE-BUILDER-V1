@@ -147,6 +147,9 @@ Configure API keys in the Settings dialog (⚙️) in the app.
 
 ## 📁 Project Structure
 
+<details>
+<summary>View Detailed Directory Map</summary>
+
 ```
 vibe-main/
 ├── src/
@@ -162,6 +165,8 @@ vibe-main/
 ├── prisma/               # Database schema
 └── public/               # Static assets
 ```
+</details>
+
 
 ---
 
