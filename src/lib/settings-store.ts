@@ -12,11 +12,13 @@ interface ProviderConfig {
 interface SettingsStore {
   provider: Provider;
   model: string;
+  // API keys are NOT persisted - stored in memory only for security
   providers: Record<Provider, ProviderConfig>;
   setProvider: (provider: Provider) => void;
   setModel: (model: string) => void;
   setProviderConfig: (provider: Provider, config: ProviderConfig) => void;
   getActiveConfig: () => ProviderConfig | null;
+  clearAllApiKeys: () => void;
 }
 
 export const PROVIDER_MODELS: Record<Provider, { id: string; name: string; free?: boolean }[]> = {
@@ -61,6 +63,8 @@ export const PROVIDER_MODELS: Record<Provider, { id: string; name: string; free?
   ],
 };
 
+// Create the store with persist for provider/model selection ONLY
+// API keys are NOT persisted for security reasons
 export const useSettingsStore = create<SettingsStore>()(
   persist(
     (set, get) => ({
@@ -68,19 +72,19 @@ export const useSettingsStore = create<SettingsStore>()(
       model: "x-ai/grok-4.1-fast:free",
       providers: {
         openrouter: {
-          apiKey: typeof window !== 'undefined' ? "" : process.env.OPENROUTER_API_KEY || "",
+          apiKey: "",
           baseUrl: PROVIDER_INFO.openrouter.baseUrl,
         },
         routeway: {
-          apiKey: typeof window !== 'undefined' ? "" : process.env.ROUTEWAY_API_KEY || "",
+          apiKey: "",
           baseUrl: PROVIDER_INFO.routeway.baseUrl,
         },
         megallm: {
-          apiKey: typeof window !== 'undefined' ? "" : process.env.MEGALLM_API_KEY || "",
+          apiKey: "",
           baseUrl: PROVIDER_INFO.megallm.baseUrl,
         },
         agentrouter: {
-          apiKey: typeof window !== 'undefined' ? "" : process.env.AGENTROUTER_API_KEY || "",
+          apiKey: "",
           baseUrl: PROVIDER_INFO.agentrouter.baseUrl,
         },
       },
@@ -100,9 +104,24 @@ export const useSettingsStore = create<SettingsStore>()(
         const state = get();
         return state.providers[state.provider];
       },
+      clearAllApiKeys: () =>
+        set((state) => ({
+          providers: {
+            openrouter: { ...state.providers.openrouter, apiKey: "" },
+            routeway: { ...state.providers.routeway, apiKey: "" },
+            megallm: { ...state.providers.megallm, apiKey: "" },
+            agentrouter: { ...state.providers.agentrouter, apiKey: "" },
+          },
+        })),
     }),
     {
       name: "vibe-settings",
+      // Only persist provider and model selection, NOT API keys
+      partialize: (state) => ({
+        provider: state.provider,
+        model: state.model,
+        // API keys are explicitly NOT included here - they remain in memory only
+      }),
     }
   )
 );

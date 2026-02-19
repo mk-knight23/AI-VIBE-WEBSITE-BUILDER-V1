@@ -181,6 +181,14 @@ exports.Prisma.APIKeyScalarFieldEnum = {
   lastUsed: 'lastUsed'
 };
 
+exports.Prisma.RateLimitScalarFieldEnum = {
+  id: 'id',
+  identifier: 'identifier',
+  count: 'count',
+  resetTime: 'resetTime',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -226,7 +234,8 @@ exports.Prisma.ModelName = {
   Fragment: 'Fragment',
   ProjectVersion: 'ProjectVersion',
   AIUsage: 'AIUsage',
-  APIKey: 'APIKey'
+  APIKey: 'APIKey',
+  RateLimit: 'RateLimit'
 };
 
 /**

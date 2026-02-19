@@ -1,15 +1,49 @@
-# Vibe - AI Website Builder
+# 🏗️ AI-VIBE-WEBSITE-BUILDER-V1
 
-[![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/mk-knight23/vibe-main)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Next.js](https://img.shields.io/badge/Next.js-15.1.3-black.svg)](https://nextjs.org)
-[![React](https://img.shields.io/badge/React-19.0.0-blue.svg)](https://react.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7.2-blue.svg)](https://www.typescriptlang.org)
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/mk-knight23/vibe-main)
+<p align="center">
+  <img src="https://img.shields.io/badge/AI--VIBE-WEBSITE--BUILDER--V1-black?style=for-the-badge&logo=next.js&logoColor=white" alt="AI Vibe Project">
+  <br>
+  <b>Build stunning websites with AI in seconds using real-time streaming.</b>
+</p>
 
-Build stunning websites with AI in seconds using real-time streaming.
+<p align="center">
+  <img src="https://img.shields.io/badge/version-3.0.0-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Next.js-15.1.3-black.svg?logo=next.js&logoColor=white" alt="Next.js">
+  <img src="https://img.shields.io/badge/React-19.0.0-blue.svg?logo=react&logoColor=white" alt="React">
+  <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT">
+</p>
 
-> **Version 3.0.0** - Complete architecture overhaul with 4 AI  providers, real-time streaming, and modern tech stack.
+---
+
+> **Version 3.0.0** - Complete architecture overhaul with 4 AI providers, real-time streaming, and modern tech stack.
+
+---
+
+## 🗺️ Quick Navigation
+
+- [🚀 Quick Start](#-quick-start)
+- [✨ Features](#-features)
+- [📦 Installation](#-installation)
+- [🔌 AI Providers](#-ai-providers)
+- [🎯 How It Works](#-how-it-works)
+- [🏗️ Architecture](#%EF%B8%8F-architecture)
+- [🔒 Security](#-security)
+- [🌐 Deployment](#-deployment)
+
+---
+
+## 🛠️ Engineered With
+
+<p align="left">
+  <a href="https://nextjs.org"><img src="https://skillicons.dev/icons?i=nextjs" alt="Next.js"></a>
+  <a href="https://react.dev"><img src="https://skillicons.dev/icons?i=react" alt="React"></a>
+  <a href="https://prisma.io"><img src="https://skillicons.dev/icons?i=prisma" alt="Prisma"></a>
+  <a href="https://postgresql.org"><img src="https://skillicons.dev/icons?i=postgres" alt="PostgreSQL"></a>
+  <a href="https://tailwindcss.com"><img src="https://skillicons.dev/icons?i=tailwind" alt="Tailwind CSS"></a>
+  <a href="https://clerk.com"><img src="https://img.shields.io/badge/Auth-Clerk-6C47FF" alt="Clerk"></a>
+</p>
+
+---
 
 ## 🚀 Quick Start
 
@@ -21,6 +55,8 @@ npm run dev
 # Open http://localhost:3000
 ```
 
+---
+
 ## ✨ Features
 
 - 🤖 **4 AI Providers** - OpenRouter, Routeway, MegaLLM, AgentRouter
@@ -29,6 +65,8 @@ npm run dev
 - 🎨 **Modern UI** - Clean, responsive interface
 - 🔒 **Secure** - API keys stored locally in browser
 - 📱 **Mobile Friendly** - Works on all devices
+
+---
 
 ## 📦 Installation
 
@@ -73,6 +111,8 @@ npx prisma migrate dev
 npm run dev
 ```
 
+---
+
 ## 🔌 AI Providers
 
 Configure API keys in the Settings dialog (⚙️) in the app.
@@ -93,6 +133,8 @@ Configure API keys in the Settings dialog (⚙️) in the app.
 - **Website:** https://agentrouter.org
 - **Models:** GLM, DeepSeek, Claude
 
+---
+
 ## 🎯 How It Works
 
 1. **Sign in** to the app
@@ -100,6 +142,8 @@ Configure API keys in the Settings dialog (⚙️) in the app.
 3. **Describe your website** in the input
 4. **Watch it build** in real-time
 5. **Preview instantly** when complete
+
+---
 
 ## 📁 Project Structure
 
@@ -111,17 +155,15 @@ vibe-main/
 │   │   ├── projects/     # Project pages
 │   │   └── api/          # API routes
 │   ├── components/       # Reusable components
-│   │   └── ui/           # UI components
 │   ├── lib/              # Core utilities
 │   ├── modules/          # Feature modules
-│   │   ├── home/         # Home module
-│   │   ├── projects/     # Projects module
-│   │   └── messages/     # Messages module
 │   ├── hooks/            # Custom React hooks
 │   └── trpc/             # tRPC API layer
 ├── prisma/               # Database schema
 └── public/               # Static assets
 ```
+
+---
 
 ## 🏗️ Architecture
 
@@ -139,6 +181,8 @@ vibe-main/
 - **API:** tRPC
 - **UI:** Radix UI + shadcn/ui
 
+---
+
 ## 🔒 Security
 
 - ✅ API keys stored locally (browser localStorage)
@@ -146,6 +190,8 @@ vibe-main/
 - ✅ Rate limiting (5 projects/min)
 - ✅ Input sanitization
 - ✅ CSRF protection
+
+---
 
 ## 🚀 Deployment
 
@@ -164,31 +210,33 @@ Set these in your deployment platform:
 - `CLERK_SECRET_KEY`
 - `E2B_API_KEY`
 
+---
+
 ## 📚 API Routes
 
 - `POST /api/generate` - Generate website with streaming
 - `POST /api/validate-key` - Validate AI provider API key
 - `/api/trpc/*` - tRPC API endpoints
 
-## 🤝 Contributing
+---
+
+## 🤝 Contributing & Support
 
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
-## 📄 License
-
-MIT License
-
-## 🆘 Support
+3. Submit a pull request
 
 - **Issues:** Open a GitHub issue
 - **Docs:** Comprehensive documentation is available in the [`docs/`](docs/) folder.
 
 ---
 
-**Version:** 3.0.0  
-**Status:** Production Ready ✅
+## 📄 License
 
-Made with ❤️ using AI
+MIT License - see LICENSE file for details.
+
+---
+
+<p align="center">
+  <i>AI-VIBE-WEBSITE-BUILDER-V1 - Version 3.0.0 | Production Ready ✅</i>
+</p>

@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { fetchWithCSRF } from "./use-csrf";
 
 interface GenerateOptions {
   projectId: string;
@@ -32,9 +33,9 @@ export function useGenerateStream() {
     setStatus(options.partialCode ? "Resuming..." : "Initializing...");
 
     try {
-      const response = await fetch("/api/generate", {
+      // Use CSRF-protected fetch
+      const response = await fetchWithCSRF("/api/generate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(options),
       });
 

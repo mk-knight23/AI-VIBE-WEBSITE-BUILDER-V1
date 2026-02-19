@@ -110,7 +110,20 @@ model APIKey {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   lastUsed DateTime?
-  
+
   @@unique([userId, provider])
   @@index([userId])
+}
+
+// Rate limiting for API endpoints
+// Enables production-ready rate limiting across serverless instances
+model RateLimit {
+  id        String   @id @default(cuid())
+  identifier String // userId or IP hash
+  count     Int
+  resetTime DateTime
+  createdAt DateTime @default(now())
+
+  @@index([identifier, resetTime])
+  @@index([resetTime])
 }

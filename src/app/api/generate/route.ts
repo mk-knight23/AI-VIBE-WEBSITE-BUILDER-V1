@@ -3,12 +3,21 @@ import { Sandbox } from "@e2b/code-interpreter";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/db";
 import { PROMPT } from "@/prompt";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { requireValidCSRF } from "@/lib/csrf";
 
-const E2B_API_KEY = process.env.E2B_API_KEY;
-const E2B_TEMPLATE = process.env.E2B_SANDBOX_TEMPLATE || "vibe-kazi-test3";
+// Validate and assert environment variables exist
+const E2B_API_KEY = process.env.E2B_API_KEY as string;
+const E2B_TEMPLATE = process.env.E2B_SANDBOX_TEMPLATE as string;
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+if (!E2B_API_KEY || !E2B_TEMPLATE) {
+  throw new Error(
+    "Missing required environment variables: E2B_API_KEY and E2B_SANDBOX_TEMPLATE must be set",
+  );
+}
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const maxDuration = 300;
 
@@ -21,7 +30,7 @@ async function tryGeneration(
   baseUrl: string,
   userMessage: string,
   send: (data: any) => void,
-  partialCode?: string
+  partialCode?: string,
 ): Promise<string> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -40,7 +49,11 @@ async function tryGeneration(
 
   if (partialCode) {
     messages.push({ role: "assistant", content: partialCode });
-    messages.push({ role: "user", content: "Continue generating the rest of the application. Do not repeat what you already wrote, just continue from the last fragment." });
+    messages.push({
+      role: "user",
+      content:
+        "Continue generating the rest of the application. Do not repeat what you already wrote, just continue from the last fragment.",
+    });
   }
 
   const response = await fetch(`${baseUrl}/chat/completions`, {
@@ -57,7 +70,9 @@ async function tryGeneration(
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`${provider} failed with status ${response.status}: ${errorText}`);
+    throw new Error(
+      `${provider} failed with status ${response.status}: ${errorText}`,
+    );
   }
 
   const reader = response.body?.getReader();
@@ -106,7 +121,21 @@ export async function POST(req: NextRequest) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  const { projectId, provider, model, apiKey, baseUrl, partialCode } = await req.json();
+  // CSRF Protection for state-changing operations
+  const csrfToken = req.headers.get("x-csrf-token");
+  const csrfError = await requireValidCSRF(csrfToken);
+  if (csrfError) {
+    return csrfError;
+  }
+
+  // Rate limiting: 5 requests per 5 minutes for generation (expensive operation)
+  const rateLimitResponse = await checkRateLimit("generation");
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
+  const { projectId, provider, model, apiKey, baseUrl, partialCode } =
+    await req.json();
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
@@ -140,10 +169,21 @@ export async function POST(req: NextRequest) {
         if (apiKey && baseUrl) {
           try {
             send({ type: "status", message: `✨ Trying ${usedProvider}...` });
-            fullResponse = await tryGeneration(usedProvider, usedModel, apiKey, baseUrl, userMessage, send, partialCode);
+            fullResponse = await tryGeneration(
+              usedProvider,
+              usedModel,
+              apiKey,
+              baseUrl,
+              userMessage,
+              send,
+              partialCode,
+            );
           } catch (error: any) {
             console.log(`Primary provider ${provider} failed:`, error.message);
-            send({ type: "status", message: `⚠️ ${provider} failed, trying fallback...` });
+            send({
+              type: "status",
+              message: `⚠️ ${provider} failed, trying fallback...`,
+            });
           }
         }
 
@@ -155,7 +195,10 @@ export async function POST(req: NextRequest) {
             if (!fallbackKey) continue;
 
             try {
-              send({ type: "status", message: `🔄 Trying ${fallback.name}...` });
+              send({
+                type: "status",
+                message: `🔄 Trying ${fallback.name}...`,
+              });
 
               fullResponse = await tryGeneration(
                 fallback.name,
@@ -164,7 +207,7 @@ export async function POST(req: NextRequest) {
                 fallback.baseUrl,
                 userMessage,
                 send,
-                partialCode
+                partialCode,
               );
 
               usedProvider = fallback.name;
@@ -179,7 +222,9 @@ export async function POST(req: NextRequest) {
         }
 
         if (!fullResponse) {
-          throw new Error("All AI providers failed. Please check your API keys in settings.");
+          throw new Error(
+            "All AI providers failed. Please check your API keys in settings.",
+          );
         }
 
         send({ type: "status", message: "📝 Extracting and healing files..." });
@@ -194,7 +239,8 @@ export async function POST(req: NextRequest) {
           repairedResponse += "\n```"; // Close dangling code block
         }
 
-        const fileRegex = /FILE:\s*([^\n]+)\n```(?:html|css|javascript|js)?\n([\s\S]*?)```/g;
+        const fileRegex =
+          /FILE:\s*([^\n]+)\n```(?:html|css|javascript|js)?\n([\s\S]*?)```/g;
         let match;
 
         while ((match = fileRegex.exec(repairedResponse)) !== null) {
@@ -207,7 +253,9 @@ export async function POST(req: NextRequest) {
         if (Object.keys(files).length === 0) {
           const htmlMatch = repairedResponse.match(/```html\n([\s\S]*?)```/i);
           const cssMatch = repairedResponse.match(/```css\n([\s\S]*?)```/i);
-          const jsMatch = repairedResponse.match(/```(?:javascript|js)\n([\s\S]*?)```/i);
+          const jsMatch = repairedResponse.match(
+            /```(?:javascript|js)\n([\s\S]*?)```/i,
+          );
 
           if (htmlMatch) files["index.html"] = htmlMatch[1].trim();
           if (cssMatch) files["styles.css"] = cssMatch[1].trim();
@@ -258,7 +306,9 @@ export async function POST(req: NextRequest) {
 
         // Verify server is running
         try {
-          await sandbox.commands.run("curl -s http://localhost:8000 > /dev/null");
+          await sandbox.commands.run(
+            "curl -s http://localhost:8000 > /dev/null",
+          );
         } catch (e) {
           console.log("Server check failed, waiting more...");
           await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -268,7 +318,9 @@ export async function POST(req: NextRequest) {
 
         send({ type: "status", message: "💾 Saving to database..." });
 
-        const filesList = Object.keys(files).map(f => `- ${f}`).join('\n');
+        const filesList = Object.keys(files)
+          .map((f) => `- ${f}`)
+          .join("\n");
         const successMessage = `✅ **Website Generated Successfully!**
 
 📁 **Files Created:**
@@ -314,7 +366,7 @@ Your website is ready! Check the Preview tab to see it live, and the Code tab to
         console.error("Generation error:", error);
         send({
           type: "error",
-          message: error.message || "Generation failed. Please try again."
+          message: error.message || "Generation failed. Please try again.",
         });
 
         if (sandbox) {
